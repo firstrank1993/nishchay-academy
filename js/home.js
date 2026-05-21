@@ -3,28 +3,22 @@
 // ============================================
 
 import { db } from './firebase-config.js';
-import { collection, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 // Run when page loads
 document.addEventListener('DOMContentLoaded', async () => {
   await loadExamBodies();
 });
 
-// Load all active exam bodies from Firestore
+// Load all exam bodies from Firestore
 async function loadExamBodies() {
   const skeletonLoader = document.getElementById('skeletonLoader');
   const examBodiesList = document.getElementById('examBodiesList');
   const emptyState = document.getElementById('emptyState');
 
   try {
-    // Fetch exam bodies from Firestore
-    const q = query(
-      collection(db, 'examBodies'),
-      where('isActive', '==', true),
-      orderBy('order', 'asc')
-    );
-
-    const snapshot = await getDocs(q);
+    // Simple fetch — no complex query needed
+    const snapshot = await getDocs(collection(db, 'examBodies'));
 
     // Hide skeleton loader
     skeletonLoader.style.display = 'none';
@@ -34,15 +28,22 @@ async function loadExamBodies() {
       return;
     }
 
+    // Sort by order field
+    const examBodies = [];
+    snapshot.forEach(doc => {
+      examBodies.push({ id: doc.id, ...doc.data() });
+    });
+    examBodies.sort((a, b) => (a.order || 0) - (b.order || 0));
+
     // Build HTML for each exam body
     let html = '';
-    snapshot.forEach(doc => {
-      const data = doc.data();
+    examBodies.forEach(data => {
+      if (data.isActive === false) return;
       const initials = data.name.substring(0, 4).toUpperCase();
 
       html += `
         <div class="exam-body-card card-clickable"
-             onclick="window.location.href='exam.html?bodyId=${doc.id}&bodyName=${encodeURIComponent(data.name)}'">
+             onclick="window.location.href='exam.html?bodyId=${data.id}&bodyName=${encodeURIComponent(data.name)}'">
           <div class="exam-body-icon">${initials}</div>
           <div class="exam-body-info">
             <h3>${data.name}</h3>
@@ -55,6 +56,11 @@ async function loadExamBodies() {
         </div>
       `;
     });
+
+    if (html === '') {
+      emptyState.style.display = 'block';
+      return;
+    }
 
     examBodiesList.innerHTML = html;
     examBodiesList.style.display = 'flex';
