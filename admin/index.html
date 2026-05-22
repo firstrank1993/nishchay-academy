@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Nishchay Academy</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="background: linear-gradient(135deg, #0D47A1, #1a237e); min-height:100vh; display:flex; align-items:center; justify-content:center; padding-bottom:0;">
+
+  <div style="background:white; border-radius:var(--radius-xl); padding:36px 28px; width:90%; max-width:380px; text-align:center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+
+    <!-- Logo -->
+    <div style="font-size:28px; font-weight:800; color:var(--primary); margin-bottom:4px;">
+      Nishchay <span style="color:var(--gold);">Academy</span>
+    </div>
+    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:32px;">
+      Admin Panel
+    </div>
+
+    <!-- Lock Icon -->
+    <div style="font-size:52px; margin-bottom:20px;">🔐</div>
+
+    <h2 style="font-size:20px; font-weight:700; margin-bottom:8px;">Admin Access</h2>
+    <p style="font-size:13px; color:var(--text-secondary); margin-bottom:28px;">
+      Sign in with your authorized Google account to access the admin panel.
+    </p>
+
+    <!-- Login Button -->
+    <button id="loginBtn" onclick="adminLogin()" class="btn btn-primary btn-full" style="font-size:15px; padding:14px;">
+      Sign in with Google
+    </button>
+
+    <!-- Error Message -->
+    <div id="errorMsg" style="display:none; margin-top:16px; padding:12px; background:#FEE2E2; border-radius:var(--radius-sm); color:#DC2626; font-size:13px;">
+      Access denied. Your account is not authorized as admin.
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingMsg" style="display:none; margin-top:16px; font-size:13px; color:var(--text-secondary);">
+      Verifying access...
+    </div>
+
+  </div>
+
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/auth-admin.js"></script>
+</body>
+</html>

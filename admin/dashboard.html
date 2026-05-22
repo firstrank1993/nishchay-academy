@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <!-- ADMIN HEADER -->
+  <header class="header">
+    <div class="header-logo">Admin <span>Panel</span></div>
+    <div class="header-actions">
+      <span id="adminEmail" style="font-size:12px; opacity:0.8;"></span>
+      <button onclick="adminLogout()" class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.3);">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <div style="margin-top:8px; margin-bottom:20px;">
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Manage all content from here</p>
+    </div>
+
+    <!-- Stats Row -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:24px;">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px; font-weight:800; color:var(--primary);" id="totalQuestions">-</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Questions</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px; font-weight:800; color:var(--success);" id="totalUsers">-</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Students</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px; font-weight:800; color:var(--accent);" id="totalTests">-</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Tests</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:28px; font-weight:800; color:#7C3AED;" id="totalSubjects">-</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Subjects</div>
+      </div>
+    </div>
+
+    <!-- Management Cards -->
+    <div class="section-header">
+      <h2 class="section-title">Manage</h2>
+    </div>
+
+    <div class="card-list">
+
+      <div class="exam-body-card card-clickable" onclick="window.location.href='exam-management.html'">
+        <div class="exam-body-icon" style="background:linear-gradient(135deg,#1565C0,#0D47A1);">🏛️</div>
+        <div class="exam-body-info">
+          <h3>Exam Management</h3>
+          <p>Add/edit exam bodies and exams</p>
+        </div>
+        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+
+      <div class="exam-body-card card-clickable" onclick="window.location.href='subjects.html'">
+        <div class="exam-body-icon" style="background:linear-gradient(135deg,#16A34A,#15803d);">📚</div>
+        <div class="exam-body-info">
+          <h3>Subjects & Topics</h3>
+          <p>Manage subjects, topics and syllabus</p>
+        </div>
+        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+
+      <div class="exam-body-card card-clickable" onclick="window.location.href='questions.html'">
+        <div class="exam-body-icon" style="background:linear-gradient(135deg,#D97706,#b45309);">❓</div>
+        <div class="exam-body-info">
+          <h3>Question Bank</h3>
+          <p>Add/edit MCQs, PYQs and IMP questions</p>
+        </div>
+        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+
+      <div class="exam-body-card card-clickable" onclick="window.location.href='study-materials.html'">
+        <div class="exam-body-icon" style="background:linear-gradient(135deg,#0891B2,#0e7490);">📄</div>
+        <div class="exam-body-info">
+          <h3>Study Materials</h3>
+          <p>Add notes, PDFs and YouTube links</p>
+        </div>
+        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+
+      <div class="exam-body-card card-clickable" onclick="window.location.href='test-creator.html'">
+        <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c);">🎯</div>
+        <div class="exam-body-info">
+          <h3>Test Creator</h3>
+          <p>Create and manage mock tests</p>
+        </div>
+        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+
+      <div class="exam-body-card card-clickable" onclick="window.location.href='users.html'">
+        <div class="exam-body-icon" style="background:linear-gradient(135deg,#7C3AED,#6d28d9);">👥</div>
+        <div class="exam-body-info">
+          <h3>Users</h3>
+          <p>View and manage students</p>
+        </div>
+        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+      </div>
+
+    </div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/dashboard.js"></script>
+</body>
+</html>
