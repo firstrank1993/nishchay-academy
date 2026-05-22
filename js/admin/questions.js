@@ -3,6 +3,7 @@
 // ============================================
 
 import { auth, db } from '../firebase-config.js';
+import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   collection, getDocs, addDoc, updateDoc,
@@ -286,4 +287,174 @@ window.showToast = function(message, type = 'info') {
   toast.textContent = message;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
+};
+
+// ── BULK UPLOAD ──
+window.showBulkUpload = function() {
+  document.getElementById('bulkUploadSection').style.display = 'block';
+  document.getElementById('bulkUploadSection').scrollIntoView({ behavior: 'smooth' });
+};
+
+window.hideBulkUpload = function() {
+  document.getElementById('bulkUploadSection').style.display = 'none';
+};
+
+window.downloadTemplate = function() {
+  const wb = XLSX.utils.book_new();
+  const headers = [
+    'Question Text',
+    'Option A', 'Option B', 'Option C', 'Option D',
+    'Correct Answer (A/B/C/D)',
+    'Type (PYQ or IMP)',
+    'Subject Name',
+    'Topic Name',
+    'Difficulty (easy/medium/hard)',
+    'Explanation',
+    'PYQ Exam Name',
+    'PYQ Year',
+    'PYQ Exam Body'
+  ];
+
+  const sampleRow = [
+    'What is Article 14?',
+    'Right to Equality',
+    'Right to Freedom',
+    'Right against Exploitation',
+    'Right to Religion',
+    'A',
+    'PYQ',
+    'ભારતીય બંધારણ',
+    'મૂળભૂત અધિકારો',
+    'medium',
+    'Article 14 deals with Right to Equality',
+    'Talati',
+    '2022',
+    'GPSSB'
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
+
+  // Column widths
+  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Questions');
+  XLSX.writeFile(wb, 'nishchay_questions_template.xlsx');
+  showToast('Template downloaded!', 'success');
+};
+
+window.handleExcelUpload = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('uploadStatus');
+  status.style.display = 'block';
+  status.style.background = '#EFF6FF';
+  status.style.color = 'var(--primary)';
+  status.textContent = 'Reading Excel file...';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+    // Remove header row
+    const dataRows = rows.slice(1).filter(row => row[0]);
+
+    if (dataRows.length === 0) {
+      status.style.background = '#FEE2E2';
+      status.style.color = '#DC2626';
+      status.textContent = 'No data found in Excel file.';
+      return;
+    }
+
+    status.textContent = `Found ${dataRows.length} questions. Uploading...`;
+
+    let success = 0;
+    let failed = 0;
+
+    for (const row of dataRows) {
+      try {
+        const questionText = String(row[0] || '').trim();
+        const optA = String(row[1] || '').trim();
+        const optB = String(row[2] || '').trim();
+        const optC = String(row[3] || '').trim();
+        const optD = String(row[4] || '').trim();
+        const correctLetter = String(row[5] || 'A').trim().toUpperCase();
+        const type = String(row[6] || 'IMP').trim().toUpperCase();
+        const subjectName = String(row[7] || '').trim();
+        const topicName = String(row[8] || '').trim();
+        const difficulty = String(row[9] || 'medium').trim().toLowerCase();
+        const explanation = String(row[10] || '').trim();
+        const pyqExamName = String(row[11] || '').trim();
+        const pyqYear = String(row[12] || '').trim();
+        const pyqExamBodyName = String(row[13] || '').trim();
+
+        if (!questionText || !optA || !optB || !optC || !optD) {
+          failed++; continue;
+        }
+
+        // Find subject ID
+        const subject = subjectsCache.find(s =>
+          s.name.toLowerCase() === subjectName.toLowerCase()
+        );
+        if (!subject) { failed++; continue; }
+
+        // Find topic ID
+        const topic = topicsCache.find(t =>
+          t.name.toLowerCase() === topicName.toLowerCase() &&
+          t.subjectId === subject.id
+        );
+        if (!topic) { failed++; continue; }
+
+        const correctMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+        const correctOption = correctMap[correctLetter] ?? 0;
+
+        const qData = {
+          questionText,
+          options: [optA, optB, optC, optD],
+          correctOption,
+          subjectId: subject.id,
+          topicId: topic.id,
+          type: type === 'PYQ' ? 'PYQ' : 'IMP',
+          difficulty,
+          explanation,
+          createdAt: serverTimestamp()
+        };
+
+        if (type === 'PYQ') {
+          qData.pyqExamName = pyqExamName;
+          qData.pyqYear = pyqYear;
+          qData.pyqExamBodyName = pyqExamBodyName;
+        }
+
+        await addDoc(collection(db, 'questions'), qData);
+        success++;
+
+        // Update status every 5 questions
+        if (success % 5 === 0) {
+          status.textContent = `Uploading... ${success} done so far`;
+        }
+
+      } catch(e) {
+        failed++;
+        console.error('Row error:', e);
+      }
+    }
+
+    status.style.background = '#DCFCE7';
+    status.style.color = 'var(--success)';
+    status.textContent = `✅ Done! ${success} uploaded successfully. ${failed > 0 ? failed + ' failed (check subject/topic names).' : ''}`;
+
+    await loadQuestions();
+
+  } catch(e) {
+    status.style.background = '#FEE2E2';
+    status.style.color = '#DC2626';
+    status.textContent = 'Error reading file. Make sure it is a valid Excel file.';
+    console.error(e);
+  }
+
+  // Reset file input
+  event.target.value = '';
 };

@@ -29,8 +29,28 @@
       </select>
     </div>
 
-    <!-- ADD BUTTON -->
-    <button onclick="showAddForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">+ Add Question</button>
+    <!-- ADD BUTTONS -->
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button onclick="showAddForm()" class="btn btn-primary" style="flex:1;">+ Add Question</button>
+      <button onclick="showBulkUpload()" class="btn btn-outline" style="flex:1;">📊 Bulk Upload</button>
+    </div>
+
+    <!-- BULK UPLOAD SECTION -->
+    <div id="bulkUploadSection" style="display:none;" class="card">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:8px;">Bulk Upload via Excel</h3>
+      <p style="font-size:12px; color:var(--text-secondary); margin-bottom:14px;">
+        Download the template, fill your questions, then upload.
+      </p>
+      <button onclick="downloadTemplate()" class="btn btn-outline btn-full" style="margin-bottom:10px;">
+        ⬇️ Download Excel Template
+      </button>
+      <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="handleExcelUpload(event)"/>
+      <button onclick="document.getElementById('excelFile').click()" class="btn btn-primary btn-full" style="margin-bottom:10px;">
+        📂 Choose Excel File
+      </button>
+      <div id="uploadStatus" style="display:none; padding:12px; border-radius:var(--radius-sm); font-size:13px; margin-bottom:10px;"></div>
+      <button onclick="hideBulkUpload()" class="btn btn-outline btn-full">Cancel</button>
+    </div>
 
     <!-- ADD/EDIT FORM -->
     <div id="questionForm" style="display:none;" class="card">
