@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Exam Management — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='dashboard.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Exam <span>Management</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- TAB SWITCHER -->
+    <div style="display:flex; gap:8px; margin:12px 0 20px; background:#F1F5F9; border-radius:var(--radius-sm); padding:4px;">
+      <button id="tab1" onclick="switchTab(1)" style="flex:1; padding:9px; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; background:white; color:var(--primary); box-shadow:var(--shadow-sm);">
+        Exam Bodies
+      </button>
+      <button id="tab2" onclick="switchTab(2)" style="flex:1; padding:9px; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; background:transparent; color:var(--text-secondary);">
+        Exams
+      </button>
+    </div>
+
+    <!-- EXAM BODIES TAB -->
+    <div id="section1">
+
+      <button onclick="showAddBodyForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">
+        + Add Exam Body
+      </button>
+
+      <!-- Add/Edit Form -->
+      <div id="bodyForm" style="display:none;" class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="bodyFormTitle">Add Exam Body</h3>
+        <input id="bodyName" type="text" placeholder="Name (e.g. GPSC)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="bodyDesc" type="text" placeholder="Description" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="bodyOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+        <div style="display:flex; gap:8px;">
+          <button onclick="saveExamBody()" class="btn btn-primary" style="flex:1;" id="saveBodyBtn">Save</button>
+          <button onclick="hideBodyForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+        </div>
+      </div>
+
+      <div id="bodiesLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="bodiesList" class="card-list" style="display:none;"></div>
+    </div>
+
+    <!-- EXAMS TAB -->
+    <div id="section2" style="display:none;">
+
+      <button onclick="showAddExamForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">
+        + Add Exam
+      </button>
+
+      <!-- Add/Edit Form -->
+      <div id="examForm" style="display:none;" class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="examFormTitle">Add Exam</h3>
+        <select id="examBodySelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+          <option value="">Select Exam Body</option>
+        </select>
+        <input id="examName" type="text" placeholder="Exam Name (e.g. CCE)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="examDesc" type="text" placeholder="Description" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="examOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+        <div style="display:flex; gap:8px;">
+          <button onclick="saveExam()" class="btn btn-primary" style="flex:1;" id="saveExamBtn">Save</button>
+          <button onclick="hideExamForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+        </div>
+      </div>
+
+      <div id="examsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="examsList" class="card-list" style="display:none;"></div>
+    </div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/exam-management.js"></script>
+</body>
+</html>
