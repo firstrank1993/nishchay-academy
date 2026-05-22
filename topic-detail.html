@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Topic — Nishchay Academy</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.history.back()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo" id="pageTitle">Topic</div>
+    </div>
+    <div class="header-actions"><div id="authBtn"></div></div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- Topic Header Card -->
+    <div id="topicHeader" style="
+      background: linear-gradient(135deg, #1565C0, #0D47A1);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      color: white;
+      margin-bottom: 20px;
+      margin-top: 8px;
+    ">
+      <p style="font-size:12px; opacity:0.8; margin-bottom:4px;" id="breadcrumb">Loading...</p>
+      <h1 style="font-size:20px; font-weight:800;" id="topicTitle">Loading...</h1>
+    </div>
+
+    <!-- Action Buttons -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+
+      <!-- Study Material -->
+      <div class="card card-clickable" onclick="scrollToSection('studySection')" style="text-align:center; padding:20px 12px;">
+        <div style="font-size:28px; margin-bottom:8px;">📖</div>
+        <div style="font-size:13px; font-weight:700; color:var(--primary);">Study</div>
+        <div style="font-size:11px; color:var(--text-secondary);">Materials</div>
+      </div>
+
+      <!-- PYQ Practice -->
+      <div class="card card-clickable" id="pyqBtn" style="text-align:center; padding:20px 12px;">
+        <div style="font-size:28px; margin-bottom:8px;">📝</div>
+        <div style="font-size:13px; font-weight:700; color:#D97706;">PYQ</div>
+        <div style="font-size:11px; color:var(--text-secondary);">Previous Year</div>
+      </div>
+
+      <!-- IMP MCQ -->
+      <div class="card card-clickable" id="impBtn" style="text-align:center; padding:20px 12px;">
+        <div style="font-size:28px; margin-bottom:8px;">⭐</div>
+        <div style="font-size:13px; font-weight:700; color:#16A34A;">IMP MCQ</div>
+        <div style="font-size:11px; color:var(--text-secondary);">Important</div>
+      </div>
+
+      <!-- Topic Test -->
+      <div class="card card-clickable" id="testBtn" style="text-align:center; padding:20px 12px;">
+        <div style="font-size:28px; margin-bottom:8px;">🎯</div>
+        <div style="font-size:13px; font-weight:700; color:#DC2626;">Test</div>
+        <div style="font-size:11px; color:var(--text-secondary);">Mock Test</div>
+      </div>
+
+    </div>
+
+    <!-- Study Materials Section -->
+    <div id="studySection">
+      <div class="section-header">
+        <h2 class="section-title">📖 Study Materials</h2>
+      </div>
+
+      <div id="materialsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+
+      <div id="materialsList" class="card-list" style="display:none;"></div>
+
+      <div id="materialsEmpty" style="display:none; text-align:center; padding:24px; color:var(--text-secondary);">
+        <p style="font-size:13px;">No study materials yet</p>
+      </div>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Practice
+    </button>
+    <button class="nav-item" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Tests
+    </button>
+    <button class="nav-item" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Results
+    </button>
+    <button class="nav-item" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/topic-detail.js"></script>
+</body>
+</html>
