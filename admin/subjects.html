@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subjects & Topics — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='dashboard.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Subjects <span>& Topics</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- TAB SWITCHER -->
+    <div style="display:flex; gap:8px; margin:12px 0 20px; background:#F1F5F9; border-radius:var(--radius-sm); padding:4px;">
+      <button id="tab1" onclick="switchTab(1)" style="flex:1; padding:9px; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; background:white; color:var(--primary); box-shadow:var(--shadow-sm);">Subjects</button>
+      <button id="tab2" onclick="switchTab(2)" style="flex:1; padding:9px; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; background:transparent; color:var(--text-secondary);">Topics</button>
+      <button id="tab3" onclick="switchTab(3)" style="flex:1; padding:9px; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer; background:transparent; color:var(--text-secondary);">Syllabus</button>
+    </div>
+
+    <!-- SUBJECTS TAB -->
+    <div id="section1">
+      <button onclick="showAddSubjectForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">+ Add Subject</button>
+
+      <div id="subjectForm" style="display:none;" class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="subjectFormTitle">Add Subject</h3>
+        <input id="subjectName" type="text" placeholder="Subject Name" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="subjectDesc" type="text" placeholder="Description" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="subjectOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+        <div style="display:flex; gap:8px;">
+          <button onclick="saveSubject()" class="btn btn-primary" style="flex:1;" id="saveSubjectBtn">Save</button>
+          <button onclick="hideSubjectForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+        </div>
+      </div>
+
+      <div id="subjectsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="subjectsList" class="card-list" style="display:none;"></div>
+    </div>
+
+    <!-- TOPICS TAB -->
+    <div id="section2" style="display:none;">
+      <button onclick="showAddTopicForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">+ Add Topic</button>
+
+      <div id="topicForm" style="display:none;" class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="topicFormTitle">Add Topic</h3>
+        <select id="topicSubjectSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+          <option value="">Select Subject</option>
+        </select>
+        <input id="topicName" type="text" placeholder="Topic Name" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="topicDesc" type="text" placeholder="Description" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="topicOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+        <div style="display:flex; gap:8px;">
+          <button onclick="saveTopic()" class="btn btn-primary" style="flex:1;" id="saveTopicBtn">Save</button>
+          <button onclick="hideTopicForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+        </div>
+      </div>
+
+      <div id="topicsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="topicsList" class="card-list" style="display:none;"></div>
+    </div>
+
+    <!-- SYLLABUS TAB -->
+    <div id="section3" style="display:none;">
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">
+        Link subjects to exams. Same subject can be linked to multiple exams.
+      </p>
+      <button onclick="showAddSyllabusForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">+ Link Subject to Exam</button>
+
+      <div id="syllabusForm" style="display:none;" class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;">Link Subject to Exam</h3>
+        <select id="syllabusExamSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+          <option value="">Select Exam</option>
+        </select>
+        <select id="syllabusSubjectSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+          <option value="">Select Subject</option>
+        </select>
+        <input id="syllabusOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+        <div style="display:flex; gap:8px;">
+          <button onclick="saveSyllabus()" class="btn btn-primary" style="flex:1;" id="saveSyllabusBtn">Save</button>
+          <button onclick="hideSyllabusForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+        </div>
+      </div>
+
+      <div id="syllabusList" class="card-list"></div>
+    </div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/subjects.js"></script>
+</body>
+</html>
