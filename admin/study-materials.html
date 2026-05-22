@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Study Materials — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='dashboard.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Study <span>Materials</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- FILTER -->
+    <div style="display:flex; gap:8px; margin:12px 0 16px;">
+      <select id="filterSubject" onchange="filterMaterials()" style="flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;">
+        <option value="">All Subjects</option>
+      </select>
+      <select id="filterType" onchange="filterMaterials()" style="flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;">
+        <option value="">All Types</option>
+        <option value="text">Text</option>
+        <option value="youtube">YouTube</option>
+        <option value="pdf">PDF</option>
+      </select>
+    </div>
+
+    <!-- ADD BUTTON -->
+    <button onclick="showAddForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">+ Add Study Material</button>
+
+    <!-- FORM -->
+    <div id="materialForm" style="display:none;" class="card">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="formTitle">Add Study Material</h3>
+
+      <!-- Type selector -->
+      <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Material Type</label>
+      <div style="display:flex; gap:8px; margin:6px 0 12px;">
+        <button id="typeText" onclick="selectMType('text')" class="btn btn-sm" style="flex:1; background:var(--primary); color:white;">Text</button>
+        <button id="typeYoutube" onclick="selectMType('youtube')" class="btn btn-sm btn-outline" style="flex:1;">YouTube</button>
+        <button id="typePdf" onclick="selectMType('pdf')" class="btn btn-sm btn-outline" style="flex:1;">PDF</button>
+      </div>
+
+      <!-- Subject & Topic -->
+      <select id="mSubjectSelect" onchange="loadTopicsForSubject()" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+        <option value="">Select Subject</option>
+      </select>
+      <select id="mTopicSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+        <option value="">Select Topic</option>
+      </select>
+
+      <!-- Title -->
+      <input id="mTitle" type="text" placeholder="Title" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+
+      <!-- Text content -->
+      <div id="textSection">
+        <textarea id="mContent" placeholder="Write notes here..." rows="5" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif; resize:vertical;"></textarea>
+      </div>
+
+      <!-- YouTube URL -->
+      <div id="youtubeSection" style="display:none;">
+        <input id="mYoutubeUrl" type="text" placeholder="YouTube URL (e.g. https://youtube.com/watch?v=...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+      </div>
+
+      <!-- PDF URL -->
+      <div id="pdfSection" style="display:none;">
+        <p style="font-size:12px; color:var(--text-secondary); margin-bottom:8px;">Upload PDF to Google Drive → Get shareable link → Paste here</p>
+        <input id="mFileUrl" type="text" placeholder="Google Drive shareable link" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+      </div>
+
+      <!-- Order -->
+      <input id="mOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+
+      <div style="display:flex; gap:8px;">
+        <button onclick="saveMaterial()" class="btn btn-primary" style="flex:1;" id="saveMBtn">Save</button>
+        <button onclick="hideForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+
+    <!-- COUNT -->
+    <div id="materialsCount" style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;"></div>
+
+    <!-- LIST -->
+    <div id="materialsLoader" class="card-list">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+    <div id="materialsList" class="card-list" style="display:none;"></div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/study-materials.js"></script>
+</body>
+</html>
