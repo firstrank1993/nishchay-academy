@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Question Bank — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='dashboard.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Question <span>Bank</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- FILTER BAR -->
+    <div style="display:flex; gap:8px; margin:12px 0 16px; flex-wrap:wrap;">
+      <select id="filterSubject" onchange="filterQuestions()" style="flex:1; min-width:120px; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;">
+        <option value="">All Subjects</option>
+      </select>
+      <select id="filterType" onchange="filterQuestions()" style="flex:1; min-width:100px; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;">
+        <option value="">All Types</option>
+        <option value="PYQ">PYQ</option>
+        <option value="IMP">IMP</option>
+      </select>
+    </div>
+
+    <!-- ADD BUTTON -->
+    <button onclick="showAddForm()" class="btn btn-primary btn-full" style="margin-bottom:16px;">+ Add Question</button>
+
+    <!-- ADD/EDIT FORM -->
+    <div id="questionForm" style="display:none;" class="card">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="formTitle">Add Question</h3>
+
+      <!-- Type -->
+      <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Question Type</label>
+      <div style="display:flex; gap:8px; margin:6px 0 12px;">
+        <button id="typePYQ" onclick="selectType('PYQ')" class="btn btn-sm" style="flex:1; background:var(--primary); color:white;">PYQ</button>
+        <button id="typeIMP" onclick="selectType('IMP')" class="btn btn-sm btn-outline" style="flex:1;">IMP MCQ</button>
+      </div>
+
+      <!-- PYQ Info (shown only for PYQ) -->
+      <div id="pyqInfo">
+        <input id="pyqExamName" type="text" placeholder="Exam name (e.g. Talati)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="pyqYear" type="text" placeholder="Year (e.g. 2022)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="pyqExamBodyName" type="text" placeholder="Exam body (e.g. GPSSB)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+      </div>
+
+      <!-- Subject & Topic -->
+      <select id="qSubjectSelect" onchange="loadTopicsForSubject()" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+        <option value="">Select Subject</option>
+      </select>
+      <select id="qTopicSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+        <option value="">Select Topic</option>
+      </select>
+
+      <!-- Question Text -->
+      <textarea id="questionText" placeholder="Question text..." rows="3" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif; resize:vertical;"></textarea>
+
+      <!-- Options -->
+      <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Options (click correct answer button)</label>
+      <div style="margin:8px 0 10px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="opt0btn" onclick="setCorrect(0)" class="btn btn-sm" style="width:36px; background:var(--primary); color:white; flex-shrink:0;">A</button>
+          <input id="opt0" type="text" placeholder="Option A" style="flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;"/>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="opt1btn" onclick="setCorrect(1)" class="btn btn-sm btn-outline" style="width:36px; flex-shrink:0;">B</button>
+          <input id="opt1" type="text" placeholder="Option B" style="flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;"/>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="opt2btn" onclick="setCorrect(2)" class="btn btn-sm btn-outline" style="width:36px; flex-shrink:0;">C</button>
+          <input id="opt2" type="text" placeholder="Option C" style="flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;"/>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button id="opt3btn" onclick="setCorrect(3)" class="btn btn-sm btn-outline" style="width:36px; flex-shrink:0;">D</button>
+          <input id="opt3" type="text" placeholder="Option D" style="flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:13px; font-family:Inter,sans-serif;"/>
+        </div>
+      </div>
+
+      <!-- Difficulty -->
+      <select id="difficulty" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+
+      <!-- Explanation -->
+      <textarea id="explanation" placeholder="Explanation (optional)..." rows="2" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif; resize:vertical;"></textarea>
+
+      <div style="display:flex; gap:8px;">
+        <button onclick="saveQuestion()" class="btn btn-primary" style="flex:1;" id="saveQBtn">Save</button>
+        <button onclick="hideForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+      </div>
+    </div>
+
+    <!-- QUESTIONS COUNT -->
+    <div id="questionsCount" style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;"></div>
+
+    <!-- QUESTIONS LIST -->
+    <div id="questionsLoader" class="card-list">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+    <div id="questionsList" class="card-list" style="display:none;"></div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/questions.js"></script>
+</body>
+</html>
