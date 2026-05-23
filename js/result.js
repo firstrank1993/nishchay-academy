@@ -9,6 +9,7 @@ import {
 
 const urlParams = new URLSearchParams(window.location.search);
 const attemptId = urlParams.get('attemptId');
+let attemptData = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (!attemptId) {
@@ -26,57 +27,60 @@ async function loadResult() {
       return;
     }
 
-    const attempt = { id: attemptSnap.id, ...attemptSnap.data() };
+    attemptData = { id: attemptSnap.id, ...attemptSnap.data() };
 
     document.getElementById('resultLoader').style.display = 'none';
     document.getElementById('resultContent').style.display = 'block';
 
-    // Fill basic stats
+    // Fill stats
     document.getElementById('resultTestTitle').textContent =
-      attempt.testTitle || 'Test Result';
-    document.getElementById('resultScore').textContent = attempt.totalScore;
+      attemptData.testTitle || 'Test Result';
+    document.getElementById('resultScore').textContent =
+      attemptData.totalScore;
     document.getElementById('resultMarks').textContent =
-      `out of ${attempt.totalMarks} marks`;
+      `out of ${attemptData.totalMarks} marks`;
     document.getElementById('resultCorrect').textContent =
-      attempt.correct || 0;
+      attemptData.correct || 0;
     document.getElementById('resultWrong').textContent =
-      attempt.wrong || 0;
+      attemptData.wrong || 0;
     document.getElementById('resultUnattempted').textContent =
-      attempt.unattempted || 0;
+      attemptData.unattempted || 0;
     document.getElementById('resultAccuracy').textContent =
-      `${attempt.accuracy || 0}%`;
+      `${attemptData.accuracy || 0}%`;
 
-    // Show total time taken
-    if (attempt.totalTimeTaken) {
-      const mins = Math.floor(attempt.totalTimeTaken / 60);
-      const secs = attempt.totalTimeTaken % 60;
-      const timeStr = mins > 0
-        ? `${mins}m ${secs}s` : `${secs}s`;
-
-      // Add time to stats
-      const statsGrid = document.querySelector(
-        '#resultContent > div:nth-child(2)'
-      );
-      if (statsGrid) {
-        const timeCard = document.createElement('div');
-        timeCard.className = 'card';
-        timeCard.style.cssText = 'text-align:center; grid-column: span 2;';
-        timeCard.innerHTML = `
-          <div style="font-size:22px; font-weight:800; color:#7C3AED;">
-            ⏱ ${timeStr}
-          </div>
-          <div style="font-size:12px; color:var(--text-secondary);">
-            Total Time Taken
-          </div>
-        `;
-        statsGrid.appendChild(timeCard);
-      }
+    // Show total time
+    if (attemptData.totalTimeTaken) {
+      const mins = Math.floor(attemptData.totalTimeTaken / 60);
+      const secs = attemptData.totalTimeTaken % 60;
+      const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+      const statsGrid = document.getElementById('statsGrid');
+      const timeCard = document.createElement('div');
+      timeCard.className = 'card';
+      timeCard.style.cssText = 'text-align:center; grid-column:span 2;';
+      timeCard.innerHTML = `
+        <div style="font-size:22px;font-weight:800;color:#7C3AED;">⏱ ${timeStr}</div>
+        <div style="font-size:12px;color:var(--text-secondary);">Total Time Taken</div>
+      `;
+      statsGrid.appendChild(timeCard);
     }
 
-    // Calculate and show rank
-    await calculateRank(attempt);
+    // Rank board button
+    const rankBtn = document.getElementById('viewRankBtn');
+    if (rankBtn) {
+      rankBtn.style.display = 'block';
+      rankBtn.style.background = '#F3E8FF';
+      rankBtn.style.color = '#7C3AED';
+      rankBtn.style.border = '1.5px solid #DDD6FE';
+      rankBtn.onclick = () => {
+        window.location.href =
+          `rankboard.html?testId=${attemptData.testId}`;
+      };
+    }
 
-    // Draw chart
+    // Calculate rank
+    await calculateRank(attemptData);
+
+    // Chart
     const ctx = document.getElementById('resultChart').getContext('2d');
     new Chart(ctx, {
       type: 'doughnut',
@@ -84,9 +88,9 @@ async function loadResult() {
         labels: ['Correct', 'Wrong', 'Skipped'],
         datasets: [{
           data: [
-            attempt.correct||0,
-            attempt.wrong||0,
-            attempt.unattempted||0
+            attemptData.correct||0,
+            attemptData.wrong||0,
+            attemptData.unattempted||0
           ],
           backgroundColor: ['#16A34A', '#DC2626', '#94A3B8'],
           borderWidth: 0
@@ -99,9 +103,9 @@ async function loadResult() {
       }
     });
 
-    // Load answer review
-    if (attempt.answers) {
-      await loadAnswerReview(attempt.answers);
+    // Answer review
+    if (attemptData.answers) {
+      await loadAnswerReview(attemptData.answers);
     }
 
   } catch(e) {
@@ -109,7 +113,6 @@ async function loadResult() {
   }
 }
 
-// ── CALCULATE RANK ──
 async function calculateRank(attempt) {
   try {
     const snap = await getDocs(collection(db, 'testAttempts'));
@@ -122,21 +125,17 @@ async function calculateRank(attempt) {
       }
     });
 
-    // Sort by score desc then accuracy desc
     allAttempts.sort((a, b) => {
       if (b.totalScore !== a.totalScore)
         return b.totalScore - a.totalScore;
-      return (b.accuracy || 0) - (a.accuracy || 0);
+      return (b.accuracy||0) - (a.accuracy||0);
     });
 
-    const rank = allAttempts.findIndex(a =>
-      a.id === attempt.id
-    ) + 1;
-
+    const rank = allAttempts.findIndex(a => a.id === attempt.id) + 1;
     const total = allAttempts.length;
 
     if (rank > 0) {
-      const banner = document.querySelector('.welcome-banner');
+      const banner = document.getElementById('resultBanner');
       if (banner) {
         const rankDiv = document.createElement('div');
         rankDiv.style.cssText = `
@@ -150,13 +149,9 @@ async function calculateRank(attempt) {
         banner.appendChild(rankDiv);
       }
     }
-
-  } catch(e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 }
 
-// ── ANSWER REVIEW ──
 async function loadAnswerReview(answers) {
   const reviewContainer = document.getElementById('answerReview');
   const questionIds = Object.keys(answers);
@@ -175,7 +170,6 @@ async function loadAnswerReview(answers) {
       const isCorrect = answer.isCorrect;
       const selectedOpt = answer.selectedOption;
 
-      // Format time taken
       const timeTaken = answer.timeTaken || 0;
       const timeDisplay = timeTaken >= 60
         ? `${Math.floor(timeTaken/60)}m ${timeTaken%60}s`
@@ -183,62 +177,46 @@ async function loadAnswerReview(answers) {
 
       html += `
         <div class="card" style="border-left:4px solid
-          ${isCorrect
-            ? 'var(--success)'
-            : selectedOpt === -1
-            ? 'var(--border)'
+          ${isCorrect ? 'var(--success)'
+            : selectedOpt === -1 ? 'var(--border)'
             : 'var(--danger)'};">
 
           <div style="display:flex; justify-content:space-between;
                       margin-bottom:8px; flex-wrap:wrap; gap:6px;">
             <span class="badge
-              ${isCorrect
-                ? 'badge-success'
-                : selectedOpt === -1
-                ? 'badge-primary'
+              ${isCorrect ? 'badge-success'
+                : selectedOpt === -1 ? 'badge-primary'
                 : 'badge-danger'}">
-              ${isCorrect
-                ? '✓ Correct'
-                : selectedOpt === -1
-                ? 'Skipped'
-                : '✗ Wrong'}
+              ${isCorrect ? '✓ Correct'
+                : selectedOpt === -1 ? 'Skipped' : '✗ Wrong'}
             </span>
             <div style="display:flex; gap:8px; align-items:center;">
-              <span style="font-size:12px; color:var(--text-secondary);">
+              <span style="font-size:12px;color:var(--text-secondary);">
                 ⏱ ${timeDisplay}
               </span>
-              <span style="font-size:12px; color:var(--text-secondary);">
+              <span style="font-size:12px;color:var(--text-secondary);">
                 ${answer.marksAwarded > 0 ? '+' : ''}${answer.marksAwarded} marks
               </span>
             </div>
           </div>
 
-          <p style="font-size:14px; font-weight:600;
-                    margin-bottom:10px; line-height:1.5;">
+          <p style="font-size:14px;font-weight:600;
+                    margin-bottom:10px;line-height:1.5;">
             ${q.questionText}
           </p>
 
-          <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
             ${q.options.map((opt, i) => `
-              <div style="padding:8px 12px; border-radius:8px; font-size:13px;
-                background:${
-                  i === q.correctOption
-                    ? '#DCFCE7'
-                    : i === selectedOpt && !isCorrect
-                    ? '#FEE2E2'
-                    : '#F8FAFC'};
-                color:${
-                  i === q.correctOption
-                    ? 'var(--success)'
-                    : i === selectedOpt && !isCorrect
-                    ? 'var(--danger)'
-                    : 'var(--text-secondary)'};
-                border:1px solid ${
-                  i === q.correctOption
-                    ? '#BBF7D0'
-                    : i === selectedOpt && !isCorrect
-                    ? '#FECACA'
-                    : 'var(--border)'};">
+              <div style="padding:8px 12px;border-radius:8px;font-size:13px;
+                background:${i === q.correctOption ? '#DCFCE7'
+                  : i === selectedOpt && !isCorrect ? '#FEE2E2'
+                  : '#F8FAFC'};
+                color:${i === q.correctOption ? 'var(--success)'
+                  : i === selectedOpt && !isCorrect ? 'var(--danger)'
+                  : 'var(--text-secondary)'};
+                border:1px solid ${i === q.correctOption ? '#BBF7D0'
+                  : i === selectedOpt && !isCorrect ? '#FECACA'
+                  : 'var(--border)'};">
                 <strong>${optLabels[i]}.</strong> ${opt}
                 ${i === q.correctOption ? ' ✓' : ''}
                 ${i === selectedOpt && !isCorrect ? ' ✗' : ''}
@@ -247,10 +225,9 @@ async function loadAnswerReview(answers) {
           </div>
 
           ${q.explanation ? `
-            <div style="margin-top:10px; padding:10px;
-                        background:#EFF6FF; border-radius:8px;
-                        font-size:12px; color:var(--primary);
-                        line-height:1.6;">
+            <div style="margin-top:10px;padding:10px;
+                        background:#EFF6FF;border-radius:8px;
+                        font-size:12px;color:var(--primary);line-height:1.6;">
               💡 ${q.explanation}
             </div>
           ` : ''}

@@ -17,10 +17,8 @@
 
   <main class="page-container">
 
-    <!-- TESTS LIST -->
     <div id="testsListSection">
       <button onclick="showCreateForm()" class="btn btn-primary btn-full" style="margin:12px 0 16px;">+ Create New Test</button>
-
       <div id="testsLoader" class="card-list">
         <div class="skeleton skeleton-card"></div>
         <div class="skeleton skeleton-card"></div>
@@ -28,9 +26,7 @@
       <div id="testsList" class="card-list" style="display:none;"></div>
     </div>
 
-    <!-- CREATE/EDIT TEST FORM -->
     <div id="testForm" style="display:none;">
-
       <div class="card" style="margin-bottom:16px;">
         <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="testFormTitle">Create Test</h3>
 
@@ -45,7 +41,6 @@
           <input id="testTotalMarks" type="number" placeholder="Total Marks" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
         </div>
 
-        <!-- Active Toggle -->
         <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px;">
           <span style="font-size:14px; font-weight:500;">Active (visible to students)</span>
           <label style="position:relative; display:inline-block; width:44px; height:24px;">
@@ -54,11 +49,9 @@
           </label>
         </div>
 
-        <!-- Activation Date -->
         <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Activation Date & Time (optional)</label>
         <input id="testActivateAt" type="datetime-local" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 10px; font-family:Inter,sans-serif;"/>
 
-        <!-- Expiry Date -->
         <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Expiry Date & Time (optional)</label>
         <input id="testExpiresAt" type="datetime-local" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 14px; font-family:Inter,sans-serif;"/>
 
@@ -68,31 +61,23 @@
         </div>
       </div>
 
-      <!-- SECTIONS -->
       <div id="sectionsArea" style="display:none;">
-
         <div class="section-header">
           <h2 class="section-title">Sections</h2>
           <button onclick="showAddSection()" class="btn btn-sm btn-primary">+ Add Section</button>
         </div>
 
-        <!-- Add Section Form -->
-        <div id="sectionForm" style="display:none;" class="card" style="margin-bottom:16px;">
+        <div id="sectionForm" style="display:none;" class="card">
           <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;">Add Section</h3>
-
-          <input id="sectionTitle" type="text" placeholder="Section Title (e.g. Indian Constitution)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
-
+          <input id="sectionTitle" type="text" placeholder="Section Title" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
           <select id="sectionTopic" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
-            <option value="">Select Topic (for auto-select questions)</option>
+            <option value="">Select Topic</option>
           </select>
-
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <input id="marksPerQ" type="number" placeholder="Marks/Question" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;" value="1"/>
-            <input id="negativeMarks" type="number" placeholder="Negative Marks" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;" value="0" step="0.25"/>
+            <input id="marksPerQ" type="number" placeholder="Marks/Question" value="1" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+            <input id="negativeMarks" type="number" placeholder="Negative Marks" value="0" step="0.25" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
           </div>
-
           <input id="questionCount" type="number" placeholder="Number of questions to pick" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
-
           <div style="display:flex; gap:8px;">
             <button onclick="saveSection()" class="btn btn-primary" style="flex:1;" id="saveSectionBtn">Add Section</button>
             <button onclick="hideSectionForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
@@ -104,9 +89,7 @@
         <button onclick="finishTest()" class="btn btn-primary btn-full" style="margin-top:16px;">
           ✅ Finish & Publish Test
         </button>
-
       </div>
-
     </div>
 
   </main>

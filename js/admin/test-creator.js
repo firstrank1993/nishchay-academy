@@ -24,7 +24,6 @@ onAuthStateChanged(auth, async (user) => {
   await loadTests();
 });
 
-// ── LOAD DATA ──
 async function loadExams() {
   const snap = await getDocs(collection(db, 'exams'));
   examsCache = [];
@@ -51,7 +50,6 @@ async function loadQuestions() {
   snap.forEach(d => questionsCache.push({ id: d.id, ...d.data() }));
 }
 
-// ── LOAD TESTS LIST ──
 async function loadTests() {
   const loader = document.getElementById('testsLoader');
   const list = document.getElementById('testsList');
@@ -60,7 +58,9 @@ async function loadTests() {
     const snap = await getDocs(collection(db, 'tests'));
     const tests = [];
     snap.forEach(d => tests.push({ id: d.id, ...d.data() }));
-    tests.sort((a, b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    tests.sort((a, b) =>
+      (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)
+    );
 
     loader.style.display = 'none';
 
@@ -71,38 +71,46 @@ async function loadTests() {
     }
 
     list.innerHTML = tests.map(t => {
-      // Format dates if available
       let scheduleInfo = '';
       if (t.activateAt) {
-        const activateDate = t.activateAt.toDate
+        const d = t.activateAt.toDate
           ? t.activateAt.toDate().toLocaleString('en-IN')
           : new Date(t.activateAt).toLocaleString('en-IN');
-        scheduleInfo += `<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">🕐 Activates: ${activateDate}</div>`;
+        scheduleInfo += `<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">🕐 Activates: ${d}</div>`;
       }
       if (t.expiresAt) {
-        const expiryDate = t.expiresAt.toDate
+        const d = t.expiresAt.toDate
           ? t.expiresAt.toDate().toLocaleString('en-IN')
           : new Date(t.expiresAt).toLocaleString('en-IN');
-        scheduleInfo += `<div style="font-size:11px;color:var(--danger);margin-top:2px;">⏰ Expires: ${expiryDate}</div>`;
+        scheduleInfo += `<div style="font-size:11px;color:var(--danger);margin-top:2px;">⏰ Expires: ${d}</div>`;
       }
 
       return `
         <div class="card">
-          <div style="display:flex; align-items:flex-start; gap:12px;">
-            <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c); font-size:20px; flex-shrink:0;">🎯</div>
+          <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:12px;">
+            <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c);font-size:20px;flex-shrink:0;">🎯</div>
             <div style="flex:1;">
-              <h3 style="font-size:14px; font-weight:700;">${t.title}</h3>
-              <p style="font-size:12px; color:var(--text-secondary);">${t.duration} min • ${t.totalMarks} marks • ${t.isActive ? '🟢 Active' : '🔴 Inactive'}</p>
+              <h3 style="font-size:14px;font-weight:700;">${t.title}</h3>
+              <p style="font-size:12px;color:var(--text-secondary);">
+                ${t.duration} min • ${t.totalMarks} marks •
+                ${t.isActive ? '🟢 Active' : '🔴 Inactive'}
+              </p>
               ${scheduleInfo}
             </div>
           </div>
-          <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button onclick="editTest('${t.id}')" class="btn btn-sm btn-outline">Edit</button>
-            <button onclick="toggleTestActive('${t.id}', ${t.isActive})" class="btn btn-sm" style="background:${t.isActive ? '#FEF3C7' : '#DCFCE7'};color:${t.isActive ? '#D97706' : 'var(--success)'};border:none;">
+            <button onclick="toggleTestActive('${t.id}', ${t.isActive})" class="btn btn-sm"
+              style="background:${t.isActive ? '#FEF3C7' : '#DCFCE7'};
+                     color:${t.isActive ? '#D97706' : 'var(--success)'};border:none;">
               ${t.isActive ? 'Deactivate' : 'Activate'}
             </button>
-            <button onclick="shareTest('${t.id}', '${t.title}')" class="btn btn-sm" style="background:#E0F2FE;color:#0284C7;border:none;">Share</button>
-            <button onclick="deleteTest('${t.id}')" class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:none;">Delete</button>
+            <button onclick="shareTest('${t.id}', '${encodeURIComponent(t.title)}')" class="btn btn-sm"
+              style="background:#E0F2FE;color:#0284C7;border:none;">📤 Share</button>
+            <button onclick="viewRankBoard('${t.id}')" class="btn btn-sm"
+              style="background:#F3E8FF;color:#7C3AED;border:none;">🏆 Ranks</button>
+            <button onclick="deleteTest('${t.id}')" class="btn btn-sm"
+              style="background:#FEE2E2;color:#DC2626;border:none;">Delete</button>
           </div>
         </div>
       `;
@@ -112,11 +120,10 @@ async function loadTests() {
   } catch(e) { console.error(e); }
 }
 
-// ── TOGGLE ACTIVE ──
 window.toggleActive = function() {
   isActive = !isActive;
-  const slider = document.getElementById('toggleSlider');
-  slider.style.background = isActive ? 'var(--primary)' : '#CBD5E1';
+  document.getElementById('toggleSlider').style.background =
+    isActive ? 'var(--primary)' : '#CBD5E1';
 };
 
 window.toggleTestActive = async function(testId, current) {
@@ -127,16 +134,15 @@ window.toggleTestActive = async function(testId, current) {
   } catch(e) { showToast('Error', 'error'); }
 };
 
-// ── DELETE TEST ──
 window.deleteTest = async function(testId) {
   if (!confirm('Delete this test permanently? This cannot be undone.')) return;
   try {
-    // Delete all sections first
-    const sectionsSnap = await getDocs(collection(db, 'tests', testId, 'sections'));
+    const sectionsSnap = await getDocs(
+      collection(db, 'tests', testId, 'sections')
+    );
     for (const s of sectionsSnap.docs) {
       await deleteDoc(doc(db, 'tests', testId, 'sections', s.id));
     }
-    // Delete the test itself
     await deleteDoc(doc(db, 'tests', testId));
     showToast('Test deleted!', 'success');
     await loadTests();
@@ -146,21 +152,23 @@ window.deleteTest = async function(testId) {
   }
 };
 
-// ── SHARE TEST ──
-window.shareTest = function(testId, testTitle) {
+window.shareTest = function(testId, encodedTitle) {
+  const testTitle = decodeURIComponent(encodedTitle);
   const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
   const message = `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt this mock test now:\n${url}`;
-
   if (navigator.share) {
     navigator.share({ title: testTitle, text: message, url });
   } else {
     navigator.clipboard.writeText(message).then(() => {
-      showToast('Test link copied! Share on WhatsApp or Telegram.', 'success');
+      showToast('Test link copied!', 'success');
     });
   }
 };
 
-// ── FORM ──
+window.viewRankBoard = function(testId) {
+  window.open(`/rankboard.html?testId=${testId}`, '_blank');
+};
+
 window.showCreateForm = function() {
   currentTestId = null;
   sectionsCache = [];
@@ -198,19 +206,23 @@ window.editTest = async function(testId) {
     document.getElementById('testDuration').value = t.duration || '';
     document.getElementById('testTotalMarks').value = t.totalMarks || '';
     isActive = t.isActive || false;
-    document.getElementById('toggleSlider').style.background = isActive ? 'var(--primary)' : '#CBD5E1';
+    document.getElementById('toggleSlider').style.background =
+      isActive ? 'var(--primary)' : '#CBD5E1';
 
-    // Set dates if available
     if (t.activateAt) {
-      const d = t.activateAt.toDate ? t.activateAt.toDate() : new Date(t.activateAt);
-      document.getElementById('testActivateAt').value = d.toISOString().slice(0,16);
+      const d = t.activateAt.toDate
+        ? t.activateAt.toDate() : new Date(t.activateAt);
+      document.getElementById('testActivateAt').value =
+        d.toISOString().slice(0,16);
     } else {
       document.getElementById('testActivateAt').value = '';
     }
 
     if (t.expiresAt) {
-      const d = t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt);
-      document.getElementById('testExpiresAt').value = d.toISOString().slice(0,16);
+      const d = t.expiresAt.toDate
+        ? t.expiresAt.toDate() : new Date(t.expiresAt);
+      document.getElementById('testExpiresAt').value =
+        d.toISOString().slice(0,16);
     } else {
       document.getElementById('testExpiresAt').value = '';
     }
@@ -223,7 +235,6 @@ window.editTest = async function(testId) {
   } catch(e) { console.error(e); }
 };
 
-// ── SAVE TEST ──
 window.saveTestDetails = async function() {
   const title = document.getElementById('testTitle').value.trim();
   const examId = document.getElementById('testExamSelect').value;
@@ -239,11 +250,7 @@ window.saveTestDetails = async function() {
 
   try {
     const data = {
-      title,
-      examId,
-      duration,
-      totalMarks,
-      isActive,
+      title, examId, duration, totalMarks, isActive,
       activateAt: activateAtVal ? new Date(activateAtVal) : null,
       expiresAt: expiresAtVal ? new Date(expiresAtVal) : null,
       createdAt: serverTimestamp()
@@ -261,35 +268,40 @@ window.saveTestDetails = async function() {
     document.getElementById('sectionsArea').style.display = 'block';
     await loadSections(currentTestId);
 
-  } catch(e) { showToast('Error saving', 'error'); console.error(e); }
+  } catch(e) {
+    showToast('Error saving', 'error');
+    console.error(e);
+  }
 
   btn.disabled = false; btn.textContent = 'Save & Add Sections';
 };
 
-// ── SECTIONS ──
 async function loadSections(testId) {
   const list = document.getElementById('sectionsList');
   try {
-    const snap = await getDocs(collection(db, 'tests', testId, 'sections'));
+    const snap = await getDocs(
+      collection(db, 'tests', testId, 'sections')
+    );
     sectionsCache = [];
     snap.forEach(d => sectionsCache.push({ id: d.id, ...d.data() }));
     sectionsCache.sort((a, b) => (a.order||0) - (b.order||0));
 
     if (sectionsCache.length === 0) {
-      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet. Add a section above.</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet.</p>';
       return;
     }
 
     list.innerHTML = sectionsCache.map(s => `
       <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <h4 style="font-size:14px; font-weight:700;">${s.title}</h4>
-          <button onclick="deleteSection('${s.id}')" class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h4 style="font-size:14px;font-weight:700;">${s.title}</h4>
+          <button onclick="deleteSection('${s.id}')" class="btn btn-sm"
+            style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
         </div>
-        <div style="font-size:12px; color:var(--text-secondary);">
+        <div style="font-size:12px;color:var(--text-secondary);">
           ${s.questionIds?.length || 0} questions •
           ${s.marksPerQ} marks each •
-          ${s.negativeMarks > 0 ? '-'+s.negativeMarks+' negative' : 'No negative marking'}
+          ${s.negativeMarks > 0 ? '-'+s.negativeMarks+' negative' : 'No negative'}
         </div>
       </div>
     `).join('');
@@ -299,7 +311,7 @@ async function loadSections(testId) {
 
 window.showAddSection = function() {
   document.getElementById('sectionForm').style.display = 'block';
-  document.getElementById('sectionForm').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('sectionForm').scrollIntoView({ behavior:'smooth' });
 };
 
 window.hideSectionForm = function() {
@@ -320,7 +332,6 @@ window.saveSection = async function() {
   btn.disabled = true; btn.textContent = 'Adding...';
 
   try {
-    // Auto-select questions from topic
     let questionIds = [];
     if (topicId) {
       const topicQuestions = questionsCache.filter(q => q.topicId === topicId);
@@ -328,26 +339,23 @@ window.saveSection = async function() {
       questionIds = shuffled.slice(0, questionCount).map(q => q.id);
     }
 
-    const sectionData = {
-      title,
-      topicId,
-      questionIds,
-      marksPerQ,
-      negativeMarks,
+    await addDoc(collection(db, 'tests', currentTestId, 'sections'), {
+      title, topicId, questionIds, marksPerQ, negativeMarks,
       order: sectionsCache.length + 1,
       createdAt: serverTimestamp()
-    };
+    });
 
-    await addDoc(collection(db, 'tests', currentTestId, 'sections'), sectionData);
     showToast(`Section added with ${questionIds.length} questions!`, 'success');
-
     hideSectionForm();
     document.getElementById('sectionTitle').value = '';
     document.getElementById('sectionTopic').value = '';
     document.getElementById('questionCount').value = '';
     await loadSections(currentTestId);
 
-  } catch(e) { showToast('Error adding section', 'error'); console.error(e); }
+  } catch(e) {
+    showToast('Error adding section', 'error');
+    console.error(e);
+  }
 
   btn.disabled = false; btn.textContent = 'Add Section';
 };
@@ -355,7 +363,9 @@ window.saveSection = async function() {
 window.deleteSection = async function(sectionId) {
   if (!confirm('Delete this section?')) return;
   try {
-    await deleteDoc(doc(db, 'tests', currentTestId, 'sections', sectionId));
+    await deleteDoc(
+      doc(db, 'tests', currentTestId, 'sections', sectionId)
+    );
     showToast('Section deleted!', 'success');
     await loadSections(currentTestId);
   } catch(e) { showToast('Error', 'error'); }
@@ -366,14 +376,10 @@ window.finishTest = async function() {
     showToast('Add at least one section first', 'error');
     return;
   }
-  showToast('Test published successfully! 🎉', 'success');
-  setTimeout(() => {
-    hideCreateForm();
-    loadTests();
-  }, 1500);
+  showToast('Test published! 🎉', 'success');
+  setTimeout(() => { hideCreateForm(); loadTests(); }, 1500);
 };
 
-// ── TOAST ──
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
