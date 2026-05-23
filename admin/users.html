@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Users — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='dashboard.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Users <span>Management</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- STATS -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0 20px;">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:26px; font-weight:800; color:var(--primary);" id="totalUsers">-</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Total Students</div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div style="font-size:26px; font-weight:800; color:var(--success);" id="totalAttempts">-</div>
+        <div style="font-size:12px; color:var(--text-secondary);">Total Attempts</div>
+      </div>
+    </div>
+
+    <!-- SEARCH -->
+    <input id="searchInput" type="text" placeholder="🔍 Search by name or email..."
+      oninput="searchUsers()"
+      style="width:100%; padding:11px 14px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:16px; font-family:Inter,sans-serif;"/>
+
+    <!-- USERS COUNT -->
+    <div id="usersCount" style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;"></div>
+
+    <!-- LOADER -->
+    <div id="usersLoader" class="card-list">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+
+    <!-- USERS LIST -->
+    <div id="usersList" class="card-list" style="display:none;"></div>
+
+    <!-- EMPTY -->
+    <div id="usersEmpty" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">👥</div>
+      <h3>No Users Yet</h3>
+      <p>Students will appear here after they login</p>
+    </div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/users.js"></script>
+</body>
+</html>
