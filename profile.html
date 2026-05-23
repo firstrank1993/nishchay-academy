@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile — Nishchay Academy</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='index.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">My <span>Profile</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- NOT LOGGED IN -->
+    <div id="notLoggedIn" style="display:none;" class="empty-state">
+      <div class="empty-state-icon">🔐</div>
+      <h3>Login Required</h3>
+      <p>Please login to view your profile</p>
+      <button onclick="loginWithGoogle()" class="btn btn-primary" style="margin-top:16px;">Login with Google</button>
+    </div>
+
+    <!-- PROFILE CONTENT -->
+    <div id="profileContent" style="display:none;">
+
+      <!-- Profile Card -->
+      <div style="
+        background: linear-gradient(135deg, #1565C0, #0D47A1);
+        border-radius: var(--radius-lg);
+        padding: 24px 20px;
+        color: white;
+        text-align: center;
+        margin-top: 8px;
+        margin-bottom: 20px;
+      ">
+        <img id="profilePhoto" src="" alt="Profile"
+          style="width:72px; height:72px; border-radius:50%; border:3px solid rgba(255,255,255,0.5); margin-bottom:12px; object-fit:cover;"/>
+        <h2 style="font-size:18px; font-weight:800; margin-bottom:4px;" id="profileName">Loading...</h2>
+        <p style="font-size:13px; opacity:0.8;" id="profileEmail"></p>
+      </div>
+
+      <!-- EDIT PROFILE FORM -->
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;">Personal Information</h3>
+
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Full Name</label>
+        <input id="editName" type="text" placeholder="Your full name" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 12px; font-family:Inter,sans-serif;"/>
+
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Mobile Number</label>
+        <input id="editMobile" type="tel" placeholder="10-digit mobile number" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 12px; font-family:Inter,sans-serif;"/>
+
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">District</label>
+        <select id="editDistrict" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 12px; font-family:Inter,sans-serif;">
+          <option value="">Select District</option>
+          <option>Ahmedabad</option>
+          <option>Surat</option>
+          <option>Vadodara</option>
+          <option>Rajkot</option>
+          <option>Bhavnagar</option>
+          <option>Jamnagar</option>
+          <option>Junagadh</option>
+          <option>Gandhinagar</option>
+          <option>Anand</option>
+          <option>Mehsana</option>
+          <option>Patan</option>
+          <option>Banaskantha</option>
+          <option>Sabarkantha</option>
+          <option>Kutch</option>
+          <option>Morbi</option>
+          <option>Surendranagar</option>
+          <option>Amreli</option>
+          <option>Gir Somnath</option>
+          <option>Porbandar</option>
+          <option>Dwarka</option>
+          <option>Botad</option>
+          <option>Kheda</option>
+          <option>Mahisagar</option>
+          <option>Aravalli</option>
+          <option>Chhota Udaipur</option>
+          <option>Dahod</option>
+          <option>Panchmahal</option>
+          <option>Vadodara</option>
+          <option>Narmada</option>
+          <option>Bharuch</option>
+          <option>Navsari</option>
+          <option>Valsad</option>
+          <option>Tapi</option>
+          <option>Dang</option>
+        </select>
+
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Qualification</label>
+        <select id="editQualification" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 16px; font-family:Inter,sans-serif;">
+          <option value="">Select Qualification</option>
+          <option value="SSC">SSC (10th)</option>
+          <option value="HSC">HSC (12th)</option>
+          <option value="Graduate">Graduate</option>
+          <option value="PostGraduate">Post Graduate</option>
+        </select>
+
+        <button onclick="saveProfile()" class="btn btn-primary btn-full" id="saveProfileBtn">
+          Save Profile
+        </button>
+      </div>
+
+      <!-- Stats Card -->
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;">My Statistics</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm);">
+            <div style="font-size:22px; font-weight:800; color:var(--primary);" id="statTests">-</div>
+            <div style="font-size:11px; color:var(--text-secondary);">Tests Taken</div>
+          </div>
+          <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm);">
+            <div style="font-size:22px; font-weight:800; color:var(--success);" id="statAccuracy">-</div>
+            <div style="font-size:11px; color:var(--text-secondary);">Avg Accuracy</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logout Button -->
+      <button onclick="logout()" class="btn btn-full" style="background:#FEE2E2; color:#DC2626; border:none; padding:13px; font-size:14px; font-weight:600; border-radius:var(--radius-sm); margin-bottom:16px;">
+        Logout
+      </button>
+
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Practice
+    </button>
+    <button class="nav-item" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Tests
+    </button>
+    <button class="nav-item" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Results
+    </button>
+    <button class="nav-item active" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/profile.js"></script>
+</body>
+</html>
