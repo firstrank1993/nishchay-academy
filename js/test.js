@@ -20,6 +20,8 @@ let currentQIndex = 0;
 let timerInterval = null;
 let timeLeft = 0;
 let testStartTime = null;
+let questionStartTime = null;
+let questionTimings = {};
 
 onAuthStateChanged(auth, user => {
   currentUser = user;
@@ -42,15 +44,24 @@ async function loadAllTests() {
   try {
     const snap = await getDocs(collection(db, 'tests'));
     const tests = [];
+
     snap.forEach(d => {
       const data = d.data();
       const now = new Date();
-const isActive = data.isActive;
-const notExpired = !data.expiresAt || new Date(data.expiresAt.seconds * 1000) > now;
-const isActivated = !data.activateAt || new Date(data.activateAt.seconds * 1000) <= now;
-if (isActive && notExpired && isActivated) tests.push({ id: d.id, ...data });
+      const isActive = data.isActive;
+      const notExpired = !data.expiresAt ||
+        new Date(data.expiresAt.seconds * 1000) > now;
+      const isActivated = !data.activateAt ||
+        new Date(data.activateAt.seconds * 1000) <= now;
+
+      if (isActive && notExpired && isActivated) {
+        tests.push({ id: d.id, ...data });
+      }
     });
-    tests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+    tests.sort((a, b) =>
+      (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+    );
 
     loader.style.display = 'none';
 
@@ -60,16 +71,33 @@ if (isActive && notExpired && isActivated) tests.push({ id: d.id, ...data });
     }
 
     list.innerHTML = tests.map(t => `
-      <div class="exam-body-card card-clickable"
-           onclick="window.location.href='test.html?testId=${t.id}'">
-        <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c); font-size:20px;">🎯</div>
-        <div class="exam-body-info">
-          <h3>${t.title}</h3>
-          <p>${t.duration} min • ${t.totalMarks} marks</p>
+      <div class="card">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; cursor:pointer;"
+             onclick="window.location.href='test.html?testId=${t.id}'">
+          <div class="exam-body-icon"
+               style="background:linear-gradient(135deg,#DC2626,#b91c1c);
+                      font-size:20px; flex-shrink:0;">🎯</div>
+          <div style="flex:1;">
+            <h3 style="font-size:15px; font-weight:700;">${t.title}</h3>
+            <p style="font-size:12px; color:var(--text-secondary);">
+              ${t.duration} min • ${t.totalMarks} marks
+            </p>
+          </div>
         </div>
-        <svg class="exam-body-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>
+        <div style="display:flex; gap:8px;">
+          <button onclick="window.location.href='test.html?testId=${t.id}'"
+                  class="btn btn-primary btn-sm" style="flex:1;">
+            Attempt Test
+          </button>
+          <button onclick="shareTest('${t.id}','${encodeURIComponent(t.title)}')"
+                  class="btn btn-sm"
+                  style="background:#E0F2FE;color:#0284C7;border:none;">
+            📤 Share
+          </button>
+        </div>
       </div>
     `).join('');
+
     list.style.display = 'flex';
 
   } catch(e) {
@@ -78,6 +106,23 @@ if (isActive && notExpired && isActivated) tests.push({ id: d.id, ...data });
     console.error(e);
   }
 }
+
+// ── SHARE TEST ──
+window.shareTest = function(testId, encodedTitle) {
+  const testTitle = decodeURIComponent(encodedTitle);
+  const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
+  const message = `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt this mock test now:\n${url}`;
+
+  if (navigator.share) {
+    navigator.share({ title: testTitle, text: message, url });
+  } else {
+    navigator.clipboard.writeText(message).then(() => {
+      showToast('Link copied! Share on WhatsApp or Telegram.', 'success');
+    }).catch(() => {
+      showToast('Copy this link: ' + url, 'info');
+    });
+  }
+};
 
 // ── LOAD TEST INTRO ──
 async function loadTestIntro(testId) {
@@ -94,9 +139,13 @@ async function loadTestIntro(testId) {
     testData = { id: testSnap.id, ...testSnap.data() };
 
     // Load sections
-    const sectionsSnap = await getDocs(collection(db, 'tests', testId, 'sections'));
+    const sectionsSnap = await getDocs(
+      collection(db, 'tests', testId, 'sections')
+    );
     testSections = [];
-    sectionsSnap.forEach(d => testSections.push({ id: d.id, ...d.data() }));
+    sectionsSnap.forEach(d =>
+      testSections.push({ id: d.id, ...d.data() })
+    );
     testSections.sort((a, b) => (a.order||0) - (b.order||0));
 
     // Count total questions
@@ -105,13 +154,14 @@ async function loadTestIntro(testId) {
 
     document.getElementById('introTitle').textContent = testData.title;
     document.getElementById('testTitle').textContent = testData.title;
-    document.getElementById('introDuration').textContent = `${testData.duration} minutes`;
+    document.getElementById('introDuration').textContent =
+      `${testData.duration} minutes`;
     document.getElementById('introQuestions').textContent = totalQ;
     document.getElementById('introMarks').textContent = testData.totalMarks;
 
-    // Check negative marking
     const hasNegative = testSections.some(s => s.negativeMarks > 0);
-    document.getElementById('introNegative').textContent = hasNegative ? 'Yes' : 'No';
+    document.getElementById('introNegative').textContent =
+      hasNegative ? 'Yes' : 'No';
 
   } catch(e) {
     console.error(e);
@@ -129,8 +179,8 @@ window.startTest = async function() {
   document.getElementById('startBtn').textContent = 'Loading questions...';
 
   try {
-    // Load all questions for all sections
     allTestQuestions = [];
+
     for (const section of testSections) {
       for (const qId of (section.questionIds || [])) {
         const qSnap = await getDoc(doc(db, 'questions', qId));
@@ -155,14 +205,14 @@ window.startTest = async function() {
     }
 
     userAnswers = {};
+    questionTimings = {};
     currentQIndex = 0;
+    questionStartTime = new Date();
     testStartTime = new Date();
 
-    // Start timer
     timeLeft = testData.duration * 60;
     startTimer();
 
-    // Show test area
     document.getElementById('testIntroSection').style.display = 'none';
     document.getElementById('testArea').style.display = 'block';
     document.getElementById('timerDisplay').style.display = 'block';
@@ -174,6 +224,8 @@ window.startTest = async function() {
   } catch(e) {
     console.error(e);
     showToast('Error loading test', 'error');
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('startBtn').textContent = 'Start Test 🎯';
   }
 };
 
@@ -196,10 +248,9 @@ function updateTimerDisplay() {
   const secs = timeLeft % 60;
   const display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
   document.getElementById('timerDisplay').textContent = display;
-
-  // Turn red when less than 5 minutes
   if (timeLeft <= 300) {
-    document.getElementById('timerDisplay').style.background = 'rgba(220,38,38,0.3)';
+    document.getElementById('timerDisplay').style.background =
+      'rgba(220,38,38,0.3)';
   }
 }
 
@@ -208,9 +259,10 @@ function buildQuestionNav() {
   const nav = document.getElementById('questionNav');
   nav.innerHTML = allTestQuestions.map((q, i) => `
     <button onclick="goToQuestion(${i})" id="navBtn${i}" style="
-      width:34px; height:34px; border-radius:8px; border:1.5px solid var(--border);
-      background:white; font-size:12px; font-weight:600; cursor:pointer;
-      font-family:Inter,sans-serif;
+      width:34px; height:34px; border-radius:8px;
+      border:1.5px solid var(--border);
+      background:white; font-size:12px; font-weight:600;
+      cursor:pointer; font-family:Inter,sans-serif;
     ">${i+1}</button>
   `).join('');
 }
@@ -218,16 +270,28 @@ function buildQuestionNav() {
 function updateNavButton(index) {
   const btn = document.getElementById(`navBtn${index}`);
   if (!btn) return;
-  const isAnswered = userAnswers[allTestQuestions[index].id] !== undefined;
+  const isAnswered =
+    userAnswers[allTestQuestions[index].id] !== undefined;
   btn.style.background = isAnswered ? 'var(--success)' : 'white';
   btn.style.color = isAnswered ? 'white' : 'var(--text-primary)';
   btn.style.borderColor = isAnswered ? 'var(--success)' : 'var(--border)';
 }
 
 window.goToQuestion = function(index) {
+  recordQuestionTime();
   currentQIndex = index;
+  questionStartTime = new Date();
   showTestQuestion();
 };
+
+// ── RECORD TIME ──
+function recordQuestionTime() {
+  if (questionStartTime && allTestQuestions[currentQIndex]) {
+    const qId = allTestQuestions[currentQIndex].id;
+    const timeSpent = Math.round((new Date() - questionStartTime) / 1000);
+    questionTimings[qId] = (questionTimings[qId] || 0) + timeSpent;
+  }
+}
 
 // ── SHOW QUESTION ──
 function showTestQuestion() {
@@ -235,20 +299,25 @@ function showTestQuestion() {
   const total = allTestQuestions.length;
   const answeredCount = Object.keys(userAnswers).length;
 
-  document.getElementById('testProgress').textContent = `Question ${currentQIndex+1} of ${total}`;
-  document.getElementById('testAnswered').textContent = `Answered: ${answeredCount}`;
-  document.getElementById('testProgressBar').style.width = `${((currentQIndex+1)/total)*100}%`;
+  document.getElementById('testProgress').textContent =
+    `Question ${currentQIndex+1} of ${total}`;
+  document.getElementById('testAnswered').textContent =
+    `Answered: ${answeredCount}`;
+  document.getElementById('testProgressBar').style.width =
+    `${((currentQIndex+1)/total)*100}%`;
 
   // Highlight current nav button
   allTestQuestions.forEach((_, i) => {
     const btn = document.getElementById(`navBtn${i}`);
-    if (btn) btn.style.outline = i === currentQIndex ? '2px solid var(--primary)' : 'none';
+    if (btn) btn.style.outline =
+      i === currentQIndex ? '2px solid var(--primary)' : 'none';
   });
 
   // PYQ badge
   if (q.type === 'PYQ' && q.pyqExamName) {
     document.getElementById('testPyqBadge').style.display = 'block';
-    document.getElementById('testPyqBadge').innerHTML = `<span class="badge badge-warning">${q.pyqExamName} ${q.pyqYear||''}</span>`;
+    document.getElementById('testPyqBadge').innerHTML =
+      `<span class="badge badge-warning">${q.pyqExamName} ${q.pyqYear||''}</span>`;
   } else {
     document.getElementById('testPyqBadge').style.display = 'none';
   }
@@ -273,7 +342,12 @@ function showTestQuestion() {
       display:flex; align-items:center; gap:10px;
     `;
     btn.innerHTML = `
-      <span style="width:28px; height:28px; border-radius:50%; background:${isSelected ? 'var(--primary)' : 'var(--primary-light)'}; color:${isSelected ? 'white' : 'var(--primary)'}; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${optLabels[i]}</span>
+      <span style="width:28px; height:28px; border-radius:50%;
+        background:${isSelected ? 'var(--primary)' : 'var(--primary-light)'};
+        color:${isSelected ? 'white' : 'var(--primary)'};
+        font-weight:700; font-size:13px;
+        display:flex; align-items:center; justify-content:center;
+        flex-shrink:0;">${optLabels[i]}</span>
       <span>${opt}</span>
     `;
     btn.onclick = () => {
@@ -284,17 +358,27 @@ function showTestQuestion() {
     container.appendChild(btn);
   });
 
-  // Prev/Next buttons
   document.getElementById('prevBtn').disabled = currentQIndex === 0;
-  document.getElementById('nextTestBtn').textContent = currentQIndex === total-1 ? 'Last Question' : 'Next →';
+  document.getElementById('nextTestBtn').textContent =
+    currentQIndex === total-1 ? 'Last Question' : 'Next →';
 }
 
 window.prevTestQuestion = function() {
-  if (currentQIndex > 0) { currentQIndex--; showTestQuestion(); }
+  if (currentQIndex > 0) {
+    recordQuestionTime();
+    currentQIndex--;
+    questionStartTime = new Date();
+    showTestQuestion();
+  }
 };
 
 window.nextTestQuestion = function() {
-  if (currentQIndex < allTestQuestions.length-1) { currentQIndex++; showTestQuestion(); }
+  if (currentQIndex < allTestQuestions.length-1) {
+    recordQuestionTime();
+    currentQIndex++;
+    questionStartTime = new Date();
+    showTestQuestion();
+  }
 };
 
 // ── SUBMIT ──
@@ -302,9 +386,10 @@ window.confirmSubmit = function() {
   const answered = Object.keys(userAnswers).length;
   const total = allTestQuestions.length;
   const unanswered = total - answered;
-
   if (unanswered > 0) {
-    if (!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return;
+    if (!confirm(
+      `You have ${unanswered} unanswered question(s). Submit anyway?`
+    )) return;
   } else {
     if (!confirm('Submit test?')) return;
   }
@@ -312,6 +397,7 @@ window.confirmSubmit = function() {
 };
 
 async function submitTest() {
+  recordQuestionTime();
   clearInterval(timerInterval);
   document.getElementById('timerDisplay').style.display = 'none';
 
@@ -336,9 +422,16 @@ async function submitTest() {
     answers[q.id] = {
       selectedOption: selected ?? -1,
       isCorrect: isAnswered ? isCorrect : false,
-      marksAwarded: isAnswered ? (isCorrect ? q.marksPerQ : -(q.negativeMarks||0)) : 0
+      marksAwarded: isAnswered
+        ? (isCorrect ? q.marksPerQ : -(q.negativeMarks||0))
+        : 0,
+      timeTaken: questionTimings[q.id] || 0
     };
   });
+
+  const totalTimeTaken = Math.round(
+    (new Date() - testStartTime) / 1000
+  );
 
   const accuracy = allTestQuestions.length > 0
     ? Math.round((correct / allTestQuestions.length) * 100) : 0;
@@ -357,12 +450,13 @@ async function submitTest() {
       wrong,
       unattempted: allTestQuestions.length - correct - wrong,
       accuracy,
+      totalTimeTaken,
       answers
     };
 
-    const attemptRef = await addDoc(collection(db, 'testAttempts'), attemptData);
-
-    // Redirect to result page
+    const attemptRef = await addDoc(
+      collection(db, 'testAttempts'), attemptData
+    );
     window.location.href = `result.html?attemptId=${attemptRef.id}`;
 
   } catch(e) {
