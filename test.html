@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test — Nishchay Academy</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button id="backBtn" onclick="confirmExit()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo" id="testTitle">Tests</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div id="timerDisplay" style="display:none; background:rgba(255,255,255,0.2); padding:6px 12px; border-radius:20px; font-size:14px; font-weight:700;">00:00</div>
+      <div id="authBtn"></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- TESTS LIST (shown when no testId in URL) -->
+    <div id="testsListSection">
+      <div class="welcome-banner" style="margin-top:8px; margin-bottom:20px;">
+        <p style="font-size:13px; opacity:0.8; margin-bottom:4px;">Mock Tests</p>
+        <h1 style="font-size:20px; font-weight:800;">Available Tests</h1>
+      </div>
+
+      <div id="testsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="testsList" class="card-list" style="display:none;"></div>
+      <div id="testsEmpty" class="empty-state" style="display:none;">
+        <div class="empty-state-icon">📋</div>
+        <h3>No Tests Available</h3>
+        <p>Tests are being prepared. Check back soon!</p>
+      </div>
+    </div>
+
+    <!-- TEST INTRO (shown when testId in URL, before starting) -->
+    <div id="testIntroSection" style="display:none;">
+      <div class="welcome-banner" style="margin-top:8px; margin-bottom:20px;">
+        <p style="font-size:13px; opacity:0.8; margin-bottom:4px;">Mock Test</p>
+        <h1 style="font-size:20px; font-weight:800;" id="introTitle">Loading...</h1>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;">Test Details</h3>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:13px; color:var(--text-secondary);">Duration</span>
+            <span style="font-size:13px; font-weight:600;" id="introDuration">—</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:13px; color:var(--text-secondary);">Total Questions</span>
+            <span style="font-size:13px; font-weight:600;" id="introQuestions">—</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:13px; color:var(--text-secondary);">Total Marks</span>
+            <span style="font-size:13px; font-weight:600;" id="introMarks">—</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="font-size:13px; color:var(--text-secondary);">Negative Marking</span>
+            <span style="font-size:13px; font-weight:600;" id="introNegative">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px; background:#FEF3C7; border-color:#FDE68A;">
+        <p style="font-size:13px; color:#92400E; line-height:1.6;">
+          ⚠️ <strong>Instructions:</strong> Once started, the timer cannot be paused. Answer all questions carefully. You can review answers after submission.
+        </p>
+      </div>
+
+      <button onclick="startTest()" class="btn btn-primary btn-full" style="font-size:16px; padding:14px;" id="startBtn">
+        Start Test 🎯
+      </button>
+    </div>
+
+    <!-- TEST AREA (shown during test) -->
+    <div id="testArea" style="display:none;">
+
+      <!-- Progress -->
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">
+          <span id="testProgress">Question 1 of 10</span>
+          <span id="testAnswered">Answered: 0</span>
+        </div>
+        <div style="height:6px; background:var(--border); border-radius:99px; overflow:hidden;">
+          <div id="testProgressBar" style="height:100%; background:var(--primary); border-radius:99px; transition:width 0.3s; width:0%;"></div>
+        </div>
+      </div>
+
+      <!-- Question Navigator -->
+      <div id="questionNav" style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px;"></div>
+
+      <!-- Question Card -->
+      <div class="card" style="margin-bottom:16px;">
+        <div id="testPyqBadge" style="display:none; margin-bottom:10px;"></div>
+        <p id="testQuestionText" style="font-size:15px; font-weight:600; line-height:1.6; margin-bottom:16px;"></p>
+        <div id="testOptionsContainer" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+      <!-- Navigation Buttons -->
+      <div style="display:flex; gap:10px; margin-bottom:16px;">
+        <button onclick="prevTestQuestion()" class="btn btn-outline" style="flex:1;" id="prevBtn">← Prev</button>
+        <button onclick="nextTestQuestion()" class="btn btn-primary" style="flex:1;" id="nextTestBtn">Next →</button>
+      </div>
+
+      <button onclick="confirmSubmit()" class="btn btn-full" style="background:var(--success); color:white; padding:14px; font-size:15px; font-weight:700;">
+        Submit Test ✓
+      </button>
+
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Practice
+    </button>
+    <button class="nav-item active" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Tests
+    </button>
+    <button class="nav-item" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Results
+    </button>
+    <button class="nav-item" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/test.js"></script>
+</body>
+</html>
