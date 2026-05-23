@@ -469,6 +469,53 @@ img { max-width: 100%; display: block; }
   }
 
   .card-grid { grid-template-columns: 1fr 1fr 1fr; }
-  body { padding-bottom: 0; }
-  .bottom-nav { display: none; }
+
+  body {
+    padding-bottom: 0;
+    padding-top: 0;
+  }
+
+  /* Keep bottom nav visible on desktop but style it as top nav */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: auto;
+    top: 60px;
+    left: 0;
+    right: 0;
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+    padding: 6px 24px;
+    justify-content: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    z-index: 99;
+  }
+
+  .nav-item {
+    flex-direction: row;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+  }
+
+  .nav-item svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .nav-item.active {
+    background: var(--primary-light);
+  }
+
+  body {
+    padding-top: 56px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    max-width: 860px;
+  }
 }
