@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Creator — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='dashboard.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Test <span>Creator</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- TESTS LIST -->
+    <div id="testsListSection">
+      <button onclick="showCreateForm()" class="btn btn-primary btn-full" style="margin:12px 0 16px;">+ Create New Test</button>
+
+      <div id="testsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div id="testsList" class="card-list" style="display:none;"></div>
+    </div>
+
+    <!-- CREATE/EDIT TEST FORM -->
+    <div id="testForm" style="display:none;">
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="testFormTitle">Create Test</h3>
+
+        <input id="testTitle" type="text" placeholder="Test Title (e.g. Talati Mock Test 1)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+
+        <select id="testExamSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+          <option value="">Select Exam</option>
+        </select>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+          <input id="testDuration" type="number" placeholder="Duration (mins)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+          <input id="testTotalMarks" type="number" placeholder="Total Marks" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+        </div>
+
+        <!-- Active Toggle -->
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); margin-bottom:14px;">
+          <span style="font-size:14px; font-weight:500;">Active (visible to students)</span>
+          <label style="position:relative; display:inline-block; width:44px; height:24px;">
+            <input type="checkbox" id="testActive" style="opacity:0; width:0; height:0;">
+            <span onclick="toggleActive()" id="toggleSlider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#CBD5E1; border-radius:24px; transition:0.3s;"></span>
+          </label>
+        </div>
+
+        <div style="display:flex; gap:8px;">
+          <button onclick="saveTestDetails()" class="btn btn-primary" style="flex:1;" id="saveTestBtn">Save & Add Sections</button>
+          <button onclick="hideCreateForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+        </div>
+      </div>
+
+      <!-- SECTIONS (shown after test is saved) -->
+      <div id="sectionsArea" style="display:none;">
+
+        <div class="section-header">
+          <h2 class="section-title">Sections</h2>
+          <button onclick="showAddSection()" class="btn btn-sm btn-primary">+ Add Section</button>
+        </div>
+
+        <!-- Add Section Form -->
+        <div id="sectionForm" style="display:none;" class="card" style="margin-bottom:16px;">
+          <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;">Add Section</h3>
+
+          <input id="sectionTitle" type="text" placeholder="Section Title (e.g. Indian Constitution)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+
+          <select id="sectionTopic" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+            <option value="">Select Topic (for auto-select questions)</option>
+          </select>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+            <input id="marksPerQ" type="number" placeholder="Marks/Question" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;" value="1"/>
+            <input id="negativeMarks" type="number" placeholder="Negative Marks" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;" value="0" step="0.25"/>
+          </div>
+
+          <input id="questionCount" type="number" placeholder="Number of questions to pick" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+
+          <div style="display:flex; gap:8px;">
+            <button onclick="saveSection()" class="btn btn-primary" style="flex:1;" id="saveSectionBtn">Add Section</button>
+            <button onclick="hideSectionForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
+          </div>
+        </div>
+
+        <div id="sectionsList" class="card-list"></div>
+
+        <button onclick="finishTest()" class="btn btn-primary btn-full" style="margin-top:16px;">
+          ✅ Finish & Publish Test
+        </button>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/test-creator.js"></script>
+</body>
+</html>

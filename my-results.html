@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Results — Nishchay Academy</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.location.href='index.html'" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">My <span>Results</span></div>
+    </div>
+    <div class="header-actions"><div id="authBtn"></div></div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- NOT LOGGED IN STATE -->
+    <div id="notLoggedIn" style="display:none;" class="empty-state">
+      <div class="empty-state-icon">🔐</div>
+      <h3>Login Required</h3>
+      <p>Please login to see your results</p>
+      <button onclick="loginWithGoogle()" class="btn btn-primary" style="margin-top:16px;">Login with Google</button>
+    </div>
+
+    <!-- LOGGED IN STATE -->
+    <div id="loggedInContent" style="display:none;">
+
+      <!-- Stats Summary -->
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:12px 0 20px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:26px; font-weight:800; color:var(--primary);" id="totalAttempts">-</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Tests Taken</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:26px; font-weight:800; color:var(--success);" id="avgAccuracy">-</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Avg Accuracy</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:26px; font-weight:800; color:var(--accent);" id="bestScore">-</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Best Score</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:26px; font-weight:800; color:#7C3AED;" id="totalCorrect">-</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Total Correct</div>
+        </div>
+      </div>
+
+      <!-- Results List -->
+      <div class="section-header">
+        <h2 class="section-title">All Attempts</h2>
+      </div>
+
+      <div id="resultsLoader" class="card-list">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+
+      <div id="resultsList" class="card-list" style="display:none;"></div>
+
+      <div id="resultsEmpty" class="empty-state" style="display:none;">
+        <div class="empty-state-icon">📋</div>
+        <h3>No Tests Attempted</h3>
+        <p>Take a mock test to see your results here</p>
+        <button onclick="window.location.href='test.html'" class="btn btn-primary" style="margin-top:16px;">Take a Test</button>
+      </div>
+
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Practice
+    </button>
+    <button class="nav-item" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Tests
+    </button>
+    <button class="nav-item active" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Results
+    </button>
+    <button class="nav-item" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/my-results.js"></script>
+</body>
+</html>
