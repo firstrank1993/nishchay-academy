@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Practice — Nishchay Academy</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.history.back()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Practice <span>MCQ</span></div>
+    </div>
+    <div class="header-actions"><div id="authBtn"></div></div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- PRACTICE MODE SELECTOR (shown when no topicId in URL) -->
+    <div id="modeSelector">
+      <div class="welcome-banner" style="margin-top:8px; margin-bottom:20px;">
+        <p style="font-size:13px; opacity:0.8; margin-bottom:4px;">Practice Mode</p>
+        <h1 style="font-size:20px; font-weight:800;">Choose Practice Type</h1>
+      </div>
+
+      <div class="card-list" id="subjectFilterSection">
+        <select id="subjectFilter" onchange="loadPracticeQuestions()" style="width:100%; padding:11px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;">
+          <option value="">All Subjects</option>
+        </select>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin:16px 0;">
+        <div class="card card-clickable" onclick="setPracticeType('PYQ')" id="modePYQ" style="text-align:center; padding:16px 8px;">
+          <div style="font-size:24px; margin-bottom:6px;">📝</div>
+          <div style="font-size:12px; font-weight:700; color:#D97706;">PYQ</div>
+        </div>
+        <div class="card card-clickable" onclick="setPracticeType('IMP')" id="modeIMP" style="text-align:center; padding:16px 8px;">
+          <div style="font-size:24px; margin-bottom:6px;">⭐</div>
+          <div style="font-size:12px; font-weight:700; color:var(--success);">IMP</div>
+        </div>
+        <div class="card card-clickable" onclick="setPracticeType('ALL')" id="modeALL" style="text-align:center; padding:16px 8px; border:2px solid var(--primary);">
+          <div style="font-size:24px; margin-bottom:6px;">🎯</div>
+          <div style="font-size:12px; font-weight:700; color:var(--primary);">Mixed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION AREA -->
+    <div id="practiceArea" style="display:none;">
+
+      <!-- Progress Bar -->
+      <div style="margin-bottom:16px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">
+          <span id="progressText">Question 1 of 10</span>
+          <span id="scoreText">Score: 0</span>
+        </div>
+        <div style="height:6px; background:var(--border); border-radius:99px; overflow:hidden;">
+          <div id="progressBar" style="height:100%; background:var(--primary); border-radius:99px; transition:width 0.3s; width:0%;"></div>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="card" style="margin-bottom:16px;">
+
+        <!-- PYQ Badge -->
+        <div id="pyqBadge" style="display:none; margin-bottom:10px;">
+          <span class="badge badge-warning" id="pyqBadgeText"></span>
+        </div>
+
+        <!-- Question Text -->
+        <p id="questionText" style="font-size:15px; font-weight:600; line-height:1.6; margin-bottom:16px;"></p>
+
+        <!-- Options -->
+        <div id="optionsContainer" style="display:flex; flex-direction:column; gap:10px;"></div>
+
+      </div>
+
+      <!-- Next Button -->
+      <button id="nextBtn" onclick="nextQuestion()" style="display:none;" class="btn btn-primary btn-full">
+        Next Question →
+      </button>
+
+      <!-- Finish Button -->
+      <button id="finishBtn" onclick="finishPractice()" style="display:none;" class="btn btn-primary btn-full">
+        Finish Practice 🎯
+      </button>
+
+    </div>
+
+    <!-- LOADING -->
+    <div id="practiceLoader" style="display:none;">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+
+    <!-- EMPTY STATE -->
+    <div id="practiceEmpty" style="display:none;" class="empty-state">
+      <div class="empty-state-icon">📭</div>
+      <h3>No Questions Found</h3>
+      <p>Questions are being added. Check back soon!</p>
+    </div>
+
+    <!-- RESULT SUMMARY -->
+    <div id="practiceSummary" style="display:none;">
+      <div class="welcome-banner" style="margin-bottom:20px; text-align:center;">
+        <div style="font-size:48px; margin-bottom:8px;">🎉</div>
+        <h2 style="font-size:22px; font-weight:800; margin-bottom:4px;">Practice Complete!</h2>
+        <p style="opacity:0.85; font-size:14px;" id="summaryText"></p>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--success);" id="summaryCorrect">0</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Correct</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--danger);" id="summaryWrong">0</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Wrong</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--primary);" id="summaryAccuracy">0%</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Accuracy</div>
+        </div>
+        <div class="card" style="text-align:center;">
+          <div style="font-size:28px; font-weight:800; color:var(--accent);" id="summaryTotal">0</div>
+          <div style="font-size:12px; color:var(--text-secondary);">Total</div>
+        </div>
+      </div>
+
+      <button onclick="restartPractice()" class="btn btn-primary btn-full" style="margin-bottom:10px;">
+        Practice Again 🔄
+      </button>
+      <button onclick="window.location.href='index.html'" class="btn btn-outline btn-full">
+        Go Home
+      </button>
+    </div>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-item active" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Practice
+    </button>
+    <button class="nav-item" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Tests
+    </button>
+    <button class="nav-item" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Results
+    </button>
+    <button class="nav-item" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/practice.js"></script>
+</body>
+</html>
