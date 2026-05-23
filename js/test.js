@@ -44,7 +44,11 @@ async function loadAllTests() {
     const tests = [];
     snap.forEach(d => {
       const data = d.data();
-      if (data.isActive) tests.push({ id: d.id, ...data });
+      const now = new Date();
+const isActive = data.isActive;
+const notExpired = !data.expiresAt || new Date(data.expiresAt.seconds * 1000) > now;
+const isActivated = !data.activateAt || new Date(data.activateAt.seconds * 1000) <= now;
+if (isActive && notExpired && isActivated) tests.push({ id: d.id, ...data });
     });
     tests.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
 

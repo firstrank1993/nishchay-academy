@@ -46,7 +46,7 @@
         </div>
 
         <!-- Active Toggle -->
-        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); margin-bottom:14px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px;">
           <span style="font-size:14px; font-weight:500;">Active (visible to students)</span>
           <label style="position:relative; display:inline-block; width:44px; height:24px;">
             <input type="checkbox" id="testActive" style="opacity:0; width:0; height:0;">
@@ -54,13 +54,21 @@
           </label>
         </div>
 
+        <!-- Activation Date -->
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Activation Date & Time (optional)</label>
+        <input id="testActivateAt" type="datetime-local" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 10px; font-family:Inter,sans-serif;"/>
+
+        <!-- Expiry Date -->
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Expiry Date & Time (optional)</label>
+        <input id="testExpiresAt" type="datetime-local" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 14px; font-family:Inter,sans-serif;"/>
+
         <div style="display:flex; gap:8px;">
           <button onclick="saveTestDetails()" class="btn btn-primary" style="flex:1;" id="saveTestBtn">Save & Add Sections</button>
           <button onclick="hideCreateForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
         </div>
       </div>
 
-      <!-- SECTIONS (shown after test is saved) -->
+      <!-- SECTIONS -->
       <div id="sectionsArea" style="display:none;">
 
         <div class="section-header">

@@ -24,6 +24,7 @@ onAuthStateChanged(auth, async (user) => {
   await loadTests();
 });
 
+// ── LOAD DATA ──
 async function loadExams() {
   const snap = await getDocs(collection(db, 'exams'));
   examsCache = [];
@@ -50,6 +51,7 @@ async function loadQuestions() {
   snap.forEach(d => questionsCache.push({ id: d.id, ...d.data() }));
 }
 
+// ── LOAD TESTS LIST ──
 async function loadTests() {
   const loader = document.getElementById('testsLoader');
   const list = document.getElementById('testsList');
@@ -68,21 +70,43 @@ async function loadTests() {
       return;
     }
 
-    list.innerHTML = tests.map(t => `
-      <div class="exam-body-card">
-        <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c); font-size:20px;">🎯</div>
-        <div class="exam-body-info">
-          <h3>${t.title}</h3>
-          <p>${t.duration} min • ${t.totalMarks} marks • ${t.isActive ? '🟢 Active' : '🔴 Inactive'}</p>
+    list.innerHTML = tests.map(t => {
+      // Format dates if available
+      let scheduleInfo = '';
+      if (t.activateAt) {
+        const activateDate = t.activateAt.toDate
+          ? t.activateAt.toDate().toLocaleString('en-IN')
+          : new Date(t.activateAt).toLocaleString('en-IN');
+        scheduleInfo += `<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">🕐 Activates: ${activateDate}</div>`;
+      }
+      if (t.expiresAt) {
+        const expiryDate = t.expiresAt.toDate
+          ? t.expiresAt.toDate().toLocaleString('en-IN')
+          : new Date(t.expiresAt).toLocaleString('en-IN');
+        scheduleInfo += `<div style="font-size:11px;color:var(--danger);margin-top:2px;">⏰ Expires: ${expiryDate}</div>`;
+      }
+
+      return `
+        <div class="card">
+          <div style="display:flex; align-items:flex-start; gap:12px;">
+            <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c); font-size:20px; flex-shrink:0;">🎯</div>
+            <div style="flex:1;">
+              <h3 style="font-size:14px; font-weight:700;">${t.title}</h3>
+              <p style="font-size:12px; color:var(--text-secondary);">${t.duration} min • ${t.totalMarks} marks • ${t.isActive ? '🟢 Active' : '🔴 Inactive'}</p>
+              ${scheduleInfo}
+            </div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;">
+            <button onclick="editTest('${t.id}')" class="btn btn-sm btn-outline">Edit</button>
+            <button onclick="toggleTestActive('${t.id}', ${t.isActive})" class="btn btn-sm" style="background:${t.isActive ? '#FEF3C7' : '#DCFCE7'};color:${t.isActive ? '#D97706' : 'var(--success)'};border:none;">
+              ${t.isActive ? 'Deactivate' : 'Activate'}
+            </button>
+            <button onclick="shareTest('${t.id}', '${t.title}')" class="btn btn-sm" style="background:#E0F2FE;color:#0284C7;border:none;">Share</button>
+            <button onclick="deleteTest('${t.id}')" class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:none;">Delete</button>
+          </div>
         </div>
-        <div style="display:flex; gap:6px; margin-left:auto; flex-direction:column;">
-          <button onclick="editTest('${t.id}')" class="btn btn-sm btn-outline">Edit</button>
-          <button onclick="toggleTestActive('${t.id}', ${t.isActive})" class="btn btn-sm" style="background:${t.isActive ? '#FEF3C7' : '#DCFCE7'};color:${t.isActive ? '#D97706' : 'var(--success)'};border:none;">
-            ${t.isActive ? 'Deactivate' : 'Activate'}
-          </button>
-        </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
     list.style.display = 'flex';
 
   } catch(e) { console.error(e); }
@@ -103,6 +127,39 @@ window.toggleTestActive = async function(testId, current) {
   } catch(e) { showToast('Error', 'error'); }
 };
 
+// ── DELETE TEST ──
+window.deleteTest = async function(testId) {
+  if (!confirm('Delete this test permanently? This cannot be undone.')) return;
+  try {
+    // Delete all sections first
+    const sectionsSnap = await getDocs(collection(db, 'tests', testId, 'sections'));
+    for (const s of sectionsSnap.docs) {
+      await deleteDoc(doc(db, 'tests', testId, 'sections', s.id));
+    }
+    // Delete the test itself
+    await deleteDoc(doc(db, 'tests', testId));
+    showToast('Test deleted!', 'success');
+    await loadTests();
+  } catch(e) {
+    showToast('Error deleting test', 'error');
+    console.error(e);
+  }
+};
+
+// ── SHARE TEST ──
+window.shareTest = function(testId, testTitle) {
+  const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
+  const message = `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt this mock test now:\n${url}`;
+
+  if (navigator.share) {
+    navigator.share({ title: testTitle, text: message, url });
+  } else {
+    navigator.clipboard.writeText(message).then(() => {
+      showToast('Test link copied! Share on WhatsApp or Telegram.', 'success');
+    });
+  }
+};
+
 // ── FORM ──
 window.showCreateForm = function() {
   currentTestId = null;
@@ -113,6 +170,8 @@ window.showCreateForm = function() {
   document.getElementById('testExamSelect').value = '';
   document.getElementById('testDuration').value = '';
   document.getElementById('testTotalMarks').value = '';
+  document.getElementById('testActivateAt').value = '';
+  document.getElementById('testExpiresAt').value = '';
   document.getElementById('toggleSlider').style.background = '#CBD5E1';
   document.getElementById('sectionsArea').style.display = 'none';
   document.getElementById('sectionsList').innerHTML = '';
@@ -141,6 +200,21 @@ window.editTest = async function(testId) {
     isActive = t.isActive || false;
     document.getElementById('toggleSlider').style.background = isActive ? 'var(--primary)' : '#CBD5E1';
 
+    // Set dates if available
+    if (t.activateAt) {
+      const d = t.activateAt.toDate ? t.activateAt.toDate() : new Date(t.activateAt);
+      document.getElementById('testActivateAt').value = d.toISOString().slice(0,16);
+    } else {
+      document.getElementById('testActivateAt').value = '';
+    }
+
+    if (t.expiresAt) {
+      const d = t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt);
+      document.getElementById('testExpiresAt').value = d.toISOString().slice(0,16);
+    } else {
+      document.getElementById('testExpiresAt').value = '';
+    }
+
     document.getElementById('testsListSection').style.display = 'none';
     document.getElementById('testForm').style.display = 'block';
     document.getElementById('sectionsArea').style.display = 'block';
@@ -155,6 +229,8 @@ window.saveTestDetails = async function() {
   const examId = document.getElementById('testExamSelect').value;
   const duration = parseInt(document.getElementById('testDuration').value) || 60;
   const totalMarks = parseInt(document.getElementById('testTotalMarks').value) || 100;
+  const activateAtVal = document.getElementById('testActivateAt').value;
+  const expiresAtVal = document.getElementById('testExpiresAt').value;
 
   if (!title) { showToast('Enter test title', 'error'); return; }
 
@@ -162,7 +238,16 @@ window.saveTestDetails = async function() {
   btn.disabled = true; btn.textContent = 'Saving...';
 
   try {
-    const data = { title, examId, duration, totalMarks, isActive, createdAt: serverTimestamp() };
+    const data = {
+      title,
+      examId,
+      duration,
+      totalMarks,
+      isActive,
+      activateAt: activateAtVal ? new Date(activateAtVal) : null,
+      expiresAt: expiresAtVal ? new Date(expiresAtVal) : null,
+      createdAt: serverTimestamp()
+    };
 
     if (currentTestId) {
       await updateDoc(doc(db, 'tests', currentTestId), data);
@@ -204,7 +289,7 @@ async function loadSections(testId) {
         <div style="font-size:12px; color:var(--text-secondary);">
           ${s.questionIds?.length || 0} questions •
           ${s.marksPerQ} marks each •
-          ${s.negativeMarks > 0 ? '-'+s.negativeMarks+' negative' : 'No negative'}
+          ${s.negativeMarks > 0 ? '-'+s.negativeMarks+' negative' : 'No negative marking'}
         </div>
       </div>
     `).join('');
@@ -288,7 +373,7 @@ window.finishTest = async function() {
   }, 1500);
 };
 
-// Toast
+// ── TOAST ──
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;

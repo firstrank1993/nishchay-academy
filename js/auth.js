@@ -79,6 +79,22 @@ async function saveUserIfNew(user) {
         isBlocked: false,
         profileComplete: false
       });
+      // Redirect to profile page to complete setup
+      if (!window.location.pathname.includes('profile.html')) {
+        showToast('Welcome! Please complete your profile.', 'info');
+        setTimeout(() => {
+          window.location.href = 'profile.html';
+        }, 1500);
+      }
+    } else {
+      // Check if profile is incomplete
+      const data = userSnap.data();
+      if (!data.profileComplete && !window.location.pathname.includes('profile.html')) {
+        showToast('Please complete your profile first.', 'info');
+        setTimeout(() => {
+          window.location.href = 'profile.html';
+        }, 1500);
+      }
     }
   } catch (error) {
     console.error('Error saving user:', error);
