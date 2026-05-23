@@ -56,7 +56,7 @@ img { max-width: 100%; display: block; }
 .header {
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 101;
   background: linear-gradient(135deg, #1565C0, #0D47A1);
   color: white;
   padding: 14px 18px;
@@ -476,16 +476,16 @@ body {
   .page-container {
     max-width: 860px;
     padding: 24px 32px;
+    margin-top: 52px;
   }
 
   .card-grid {
     grid-template-columns: 1fr 1fr 1fr;
   }
 
-  /* Move nav to top on wide screens */
   body {
     padding-bottom: 0 !important;
-    padding-top: 110px !important;
+    padding-top: 0 !important;
   }
 
   .bottom-nav {
@@ -501,7 +501,7 @@ body {
     justify-content: center !important;
     gap: 8px !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important;
-    z-index: 98 !important;
+    z-index: 100 !important;
     background: white !important;
     height: 52px !important;
   }
@@ -526,6 +526,13 @@ body {
     color: var(--primary) !important;
   }
 }
+
+@media (min-width: 1200px) {
+  .page-container {
+    max-width: 1000px;
+  }
+}
+
 
 @media (min-width: 1200px) {
   .page-container {
