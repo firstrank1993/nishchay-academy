@@ -39,7 +39,7 @@ async function loadExamBodies() {
     let html = '';
     examBodies.forEach(data => {
       if (data.isActive === false) return;
-      const initials = data.name.substring(0, 4).toUpperCase();
+      const initials = data.name.length <= 5 ? data.name.toUpperCase() : data.name.substring(0, 4).toUpperCase();
 
       html += `
         <div class="exam-body-card card-clickable"
