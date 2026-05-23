@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us — Nishchay Academy</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <header class="header">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button onclick="window.history.back()" style="background:rgba(255,255,255,0.15);border:none;color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">About <span>Us</span></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- Hero -->
+    <div class="welcome-banner" style="margin-top:8px; margin-bottom:24px; text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px;">🎯</div>
+      <h1 style="font-size:22px; font-weight:800; margin-bottom:8px;">Nishchay Academy</h1>
+      <p style="font-size:13px; opacity:0.85;">Gujarat Government Exam Preparation Platform</p>
+    </div>
+
+    <!-- Mission -->
+    <div class="card" style="margin-bottom:16px;">
+      <h2 style="font-size:16px; font-weight:700; margin-bottom:10px; color:var(--primary);">
+        🎯 Our Mission
+      </h2>
+      <p style="font-size:14px; color:var(--text-secondary); line-height:1.8;">
+        Nishchay Academy is dedicated to helping students across Gujarat prepare for government competitive exams. We provide high quality study materials, previous year questions, and mock tests — completely free of cost.
+      </p>
+    </div>
+
+    <!-- What We Offer -->
+    <div class="card" style="margin-bottom:16px;">
+      <h2 style="font-size:16px; font-weight:700; margin-bottom:12px; color:var(--primary);">
+        📚 What We Offer
+      </h2>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <span style="font-size:20px;">📖</span>
+          <div>
+            <div style="font-size:14px; font-weight:600;">Study Materials</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Topic-wise notes, PDFs and video lectures</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <span style="font-size:20px;">📝</span>
+          <div>
+            <div style="font-size:14px; font-weight:600;">Previous Year Questions</div>
+            <div style="font-size:12px; color:var(--text-secondary);">PYQs from GPSC, GPSSB, GSSSB and more</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <span style="font-size:20px;">🎯</span>
+          <div>
+            <div style="font-size:14px; font-weight:600;">Mock Tests</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Full length tests with timer and detailed analysis</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:flex-start; gap:10px;">
+          <span style="font-size:20px;">📊</span>
+          <div>
+            <div style="font-size:14px; font-weight:600;">Performance Analytics</div>
+            <div style="font-size:12px; color:var(--text-secondary);">Detailed result analysis with rank and accuracy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Exams We Cover -->
+    <div class="card" style="margin-bottom:16px;">
+      <h2 style="font-size:16px; font-weight:700; margin-bottom:12px; color:var(--primary);">
+        🏛️ Exams We Cover
+      </h2>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <span class="badge badge-primary">GPSC</span>
+        <span class="badge badge-primary">GPSSB</span>
+        <span class="badge badge-primary">GSSSB</span>
+        <span class="badge badge-success">Talati</span>
+        <span class="badge badge-success">Junior Clerk</span>
+        <span class="badge badge-success">Dy.SO</span>
+        <span class="badge badge-warning">CCE</span>
+        <span class="badge badge-warning">Head Clerk</span>
+      </div>
+    </div>
+
+    <!-- Contact -->
+    <div class="card" style="margin-bottom:24px;">
+      <h2 style="font-size:16px; font-weight:700; margin-bottom:10px; color:var(--primary);">
+        📬 Contact Us
+      </h2>
+      <p style="font-size:14px; color:var(--text-secondary); line-height:1.8;">
+        For any queries, suggestions or feedback, please reach us at our Contact page.
+      </p>
+      <button onclick="window.location.href='contact.html'" class="btn btn-primary btn-full" style="margin-top:12px;">
+        Contact Us
+      </button>
+    </div>
+
+    <!-- Footer note -->
+    <p style="text-align:center; font-size:12px; color:var(--text-secondary); margin-bottom:24px;">
+      © 2025 Nishchay Academy. All rights reserved.<br/>
+      <a href="privacy.html" style="color:var(--primary);">Privacy Policy</a>
+    </p>
+
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="nav-item" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Practice
+    </button>
+    <button class="nav-item" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+      Tests
+    </button>
+    <button class="nav-item" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Results
+    </button>
+    <button class="nav-item" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Profile
+    </button>
+  </nav>
+
+</body>
+</html>
