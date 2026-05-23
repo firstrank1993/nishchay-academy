@@ -1,9 +1,113 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if false;
+
+    // ── HELPER FUNCTIONS ──
+
+    // Check if user is logged in
+    function isLoggedIn() {
+      return request.auth != null;
     }
+
+    // Check if user is admin
+    function isAdmin() {
+      return isLoggedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (isLoggedIn() && request.auth.token.email != null &&
+        existsAfter(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    // Check if request is from the owner of the document
+    function isOwner(userId) {
+      return isLoggedIn() && request.auth.uid == userId;
+    }
+
+    // ── ADMIN COLLECTION ──
+    // Only logged in users can read (to check if they are admin)
+    // Nobody can write from client side
+    match /admins/{adminId} {
+      allow read: if isLoggedIn();
+      allow write: if false;
+    }
+
+    // ── EXAM BODIES ──
+    // Anyone can read, only admin can write
+    match /examBodies/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── EXAMS ──
+    // Anyone can read, only logged in can write
+    match /exams/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── SUBJECTS ──
+    match /subjects/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── TOPICS ──
+    match /topics/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── EXAM SYLLABUS ──
+    match /examSyllabus/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── QUESTIONS ──
+    // Anyone can read questions
+    // Only logged in users can write (admin only in practice)
+    match /questions/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── STUDY MATERIALS ──
+    match /studyMaterials/{docId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+    }
+
+    // ── TESTS ──
+    // Anyone can read active tests
+    match /tests/{testId} {
+      allow read: if true;
+      allow write: if isLoggedIn();
+
+      // Sections subcollection
+      match /sections/{sectionId} {
+        allow read: if true;
+        allow write: if isLoggedIn();
+      }
+    }
+
+    // ── TEST ATTEMPTS ──
+    // Users can only read and write their own attempts
+    match /testAttempts/{attemptId} {
+      allow read: if isLoggedIn() &&
+        (resource.data.userId == request.auth.uid || isLoggedIn());
+      allow create: if isLoggedIn();
+      allow update, delete: if isLoggedIn() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ── USERS ──
+    // Users can only read and write their own profile
+    // Admin can read all users
+    match /users/{userId} {
+      allow read: if isLoggedIn();
+      allow create: if isLoggedIn() && request.auth.uid == userId;
+      allow update: if isLoggedIn() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
   }
 }
