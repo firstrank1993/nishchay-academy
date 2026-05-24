@@ -2,15 +2,16 @@
 // NISHCHAY ACADEMY — Authentication
 // ============================================
 
-import { auth } from './firebase-config.js';
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  signOut, 
-  onAuthStateChanged 
+import { auth, db } from './firebase-config.js';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { db } from './firebase-config.js';
-import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  doc, getDoc, setDoc, serverTimestamp, collection, getDocs
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const provider = new GoogleAuthProvider();
 
@@ -23,16 +24,20 @@ onAuthStateChanged(auth, async (user) => {
     // Check if admin
     const isAdmin = await checkIfAdmin(user.email);
 
-    // User is logged in — show avatar
+    // Show avatar + admin button if admin
     authBtn.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
         ${isAdmin ? `
           <a href="/admin/dashboard.html"
             style="background:rgba(255,255,255,0.2);
-                   color:white; border:1px solid rgba(255,255,255,0.4);
-                   padding:5px 10px; border-radius:6px;
-                   font-size:11px; font-weight:700;
-                   text-decoration:none;">
+                   color:white;
+                   border:1px solid rgba(255,255,255,0.4);
+                   padding:5px 10px;
+                   border-radius:6px;
+                   font-size:11px;
+                   font-weight:700;
+                   text-decoration:none;
+                   white-space:nowrap;">
             ⚙️ Admin
           </a>
         ` : ''}
@@ -44,19 +49,37 @@ onAuthStateChanged(auth, async (user) => {
         />
       </div>
     `;
+
     // Save user to Firestore if first time
     await saveUserIfNew(user);
+
   } else {
     // User is not logged in — show login button
     authBtn.innerHTML = `
-      <button class="btn btn-sm" 
-              style="background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4);"
-              onclick="loginWithGoogle()">
+      <button class="btn btn-sm"
+        style="background:rgba(255,255,255,0.2);
+               color:white;
+               border:1px solid rgba(255,255,255,0.4);"
+        onclick="loginWithGoogle()">
         Login
       </button>
     `;
   }
 });
+
+// Check if email is in admins collection
+async function checkIfAdmin(email) {
+  try {
+    const snapshot = await getDocs(collection(db, 'admins'));
+    let isAdmin = false;
+    snapshot.forEach(doc => {
+      if (doc.data().email === email) isAdmin = true;
+    });
+    return isAdmin;
+  } catch(e) {
+    return false;
+  }
+}
 
 // Google Login
 window.loginWithGoogle = async function() {
@@ -79,19 +102,6 @@ window.logout = async function() {
 };
 
 // Save new user to Firestore
-async function checkIfAdmin(email) {
-  try {
-    const snapshot = await getDocs(collection(db, 'admins'));
-    let isAdmin = false;
-    snapshot.forEach(doc => {
-      if (doc.data().email === email) isAdmin = true;
-    });
-    return isAdmin;
-  } catch(e) {
-    return false;
-  }
-}
-
 async function saveUserIfNew(user) {
   try {
     const userRef = doc(db, 'users', user.uid);
@@ -117,7 +127,8 @@ async function saveUserIfNew(user) {
     } else {
       // Check if profile is incomplete
       const data = userSnap.data();
-      if (!data.profileComplete && !window.location.pathname.includes('profile.html')) {
+      if (!data.profileComplete &&
+          !window.location.pathname.includes('profile.html')) {
         showToast('Please complete your profile first.', 'info');
         setTimeout(() => {
           window.location.href = 'profile.html';
@@ -133,13 +144,9 @@ async function saveUserIfNew(user) {
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
-
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
   container.appendChild(toast);
-
-  setTimeout(() => {
-    toast.remove();
-  }, 3000);
+  setTimeout(() => toast.remove(), 3000);
 };

@@ -19,25 +19,36 @@ let sectionsCache = [];
 let isActive = false;
 let freshQuestionsFromExcel = [];
 let testTotalMarks = 0;
+let dataLoaded = false;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'index.html'; return; }
-  await loadExams();
-  await loadSubjects();
-  await loadTopics();
-  await loadQuestions();
+  await loadAllData();
   await loadTests();
 });
 
-// ── LOAD DATA ──
+// ── LOAD ALL DATA FIRST ──
+async function loadAllData() {
+  await Promise.all([
+    loadExams(),
+    loadSubjects(),
+    loadTopics(),
+    loadQuestions()
+  ]);
+  dataLoaded = true;
+}
+
 async function loadExams() {
   const snap = await getDocs(collection(db, 'exams'));
   examsCache = [];
   snap.forEach(d => examsCache.push({ id: d.id, ...d.data() }));
   const sel = document.getElementById('testExamSelect');
-  examsCache.forEach(e => {
-    sel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
-  });
+  if (sel) {
+    sel.innerHTML = '<option value="">Select Exam</option>';
+    examsCache.forEach(e => {
+      sel.innerHTML += `<option value="${e.id}">${e.name}</option>`;
+    });
+  }
 }
 
 async function loadSubjects() {
@@ -100,7 +111,8 @@ async function loadTests() {
         <div class="card">
           <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
             <div class="exam-body-icon"
-              style="background:linear-gradient(135deg,#DC2626,#b91c1c);font-size:20px;flex-shrink:0;">🎯</div>
+              style="background:linear-gradient(135deg,#DC2626,#b91c1c);
+                     font-size:20px;flex-shrink:0;">🎯</div>
             <div style="flex:1;">
               <h3 style="font-size:14px;font-weight:700;">${t.title}</h3>
               <p style="font-size:12px;color:var(--text-secondary);">
@@ -111,18 +123,30 @@ async function loadTests() {
             </div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button onclick="editTest('${t.id}')" class="btn btn-sm btn-outline">Edit</button>
-            <button onclick="toggleTestActive('${t.id}',${t.isActive})" class="btn btn-sm"
+            <button onclick="editTest('${t.id}')"
+              class="btn btn-sm btn-outline">Edit</button>
+            <button onclick="toggleTestActive('${t.id}',${t.isActive})"
+              class="btn btn-sm"
               style="background:${t.isActive ? '#FEF3C7':'#DCFCE7'};
-                     color:${t.isActive ? '#D97706':'var(--success)'};border:none;">
+                     color:${t.isActive ? '#D97706':'var(--success)'};
+                     border:none;">
               ${t.isActive ? 'Deactivate':'Activate'}
             </button>
             <button onclick="shareTest('${t.id}','${encodeURIComponent(t.title)}')"
-              class="btn btn-sm" style="background:#E0F2FE;color:#0284C7;border:none;">📤 Share</button>
+              class="btn btn-sm"
+              style="background:#E0F2FE;color:#0284C7;border:none;">
+              📤 Share
+            </button>
             <button onclick="viewRankBoard('${t.id}')"
-              class="btn btn-sm" style="background:#F3E8FF;color:#7C3AED;border:none;">🏆 Ranks</button>
+              class="btn btn-sm"
+              style="background:#F3E8FF;color:#7C3AED;border:none;">
+              🏆 Ranks
+            </button>
             <button onclick="deleteTest('${t.id}')"
-              class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:none;">Delete</button>
+              class="btn btn-sm"
+              style="background:#FEE2E2;color:#DC2626;border:none;">
+              Delete
+            </button>
           </div>
         </div>
       `;
@@ -149,36 +173,39 @@ function updateMarksDisplay() {
   const remaining = total - used;
   const percent = total > 0 ? Math.min((used / total) * 100, 100) : 0;
 
-  document.getElementById('marksUsedDisplay').textContent =
-    `${used} / ${total}`;
-  document.getElementById('marksProgressBar').style.width = `${percent}%`;
-  document.getElementById('marksProgressBar').style.background =
-    percent >= 100 ? 'var(--danger)' : percent >= 80 ? 'var(--warning)' : 'var(--primary)';
-  document.getElementById('marksRemainingText').textContent =
-    remaining > 0
-      ? `${remaining} marks remaining`
-      : remaining === 0
-      ? '✅ All marks used perfectly!'
+  const display = document.getElementById('marksUsedDisplay');
+  const bar = document.getElementById('marksProgressBar');
+  const text = document.getElementById('marksRemainingText');
+
+  if (display) display.textContent = `${used} / ${total}`;
+  if (bar) {
+    bar.style.width = `${percent}%`;
+    bar.style.background =
+      percent >= 100 ? 'var(--danger)'
+      : percent >= 80 ? 'var(--warning)'
+      : 'var(--primary)';
+  }
+  if (text) {
+    text.textContent =
+      remaining > 0 ? `${remaining} marks remaining`
+      : remaining === 0 ? '✅ All marks used perfectly!'
       : `⚠️ Exceeded by ${Math.abs(remaining)} marks!`;
+  }
 }
 
-// ── CHECK MARKS WARNING ──
 window.checkMarksWarning = function() {
-  const qCount = parseInt(document.getElementById('questionCount').value) || 0;
-  const marksPerQ = parseFloat(document.getElementById('marksPerQ').value) || 1;
+  const qCount = parseInt(document.getElementById('questionCount')?.value) || 0;
+  const marksPerQ = parseFloat(document.getElementById('marksPerQ')?.value) || 1;
   const sectionMarks = qCount * marksPerQ;
   const remaining = getRemainingMarks();
   const warning = document.getElementById('marksWarning');
   const warningText = document.getElementById('marksWarningText');
+  if (!warning || !warningText) return;
 
-  if (sectionMarks > remaining && remaining > 0) {
+  if (sectionMarks > remaining && remaining >= 0) {
     warning.style.display = 'block';
     warningText.textContent =
-      `This section will use ${sectionMarks} marks but only ${remaining} marks are remaining. Please adjust question count or marks per question.`;
-  } else if (remaining <= 0 && testTotalMarks > 0) {
-    warning.style.display = 'block';
-    warningText.textContent =
-      `No marks remaining. Total marks (${testTotalMarks}) already used. Please edit existing sections first.`;
+      `This section will use ${sectionMarks} marks but only ${remaining} marks remaining. Please adjust.`;
   } else {
     warning.style.display = 'none';
   }
@@ -187,23 +214,50 @@ window.checkMarksWarning = function() {
 // ── SUBJECT CHECKBOXES ──
 function renderSubjectCheckboxes() {
   const container = document.getElementById('subjectCheckboxes');
+  if (!container) return;
 
   if (subjectsCache.length === 0) {
-    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">No subjects found. Add subjects first.</p>';
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">No subjects found.</p>';
     return;
   }
 
-  container.innerHTML = subjectsCache.map(s => `
+  container.innerHTML = `
     <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
-                  background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;
-                  border:1px solid var(--border);">
-      <input type="checkbox" value="${s.id}"
-        onchange="onSubjectChange()"
+                  background:#EFF6FF;border-radius:var(--radius-sm);cursor:pointer;
+                  border:1.5px solid var(--primary);margin-bottom:6px;">
+      <input type="checkbox" id="selectAllSubjects"
+        onchange="toggleAllSubjects(this.checked)"
         style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
-      <span style="font-size:14px;font-weight:500;">${s.name}</span>
+      <span style="font-size:14px;font-weight:700;color:var(--primary);">
+        ✅ Select All Subjects
+      </span>
     </label>
-  `).join('');
+    ${subjectsCache.map(s => `
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
+                    background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;
+                    border:1px solid var(--border);margin-bottom:4px;">
+        <input type="checkbox" value="${s.id}" class="subject-checkbox"
+          onchange="onSubjectChange()"
+          style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
+        <span style="font-size:14px;font-weight:500;">📚 ${s.name}</span>
+      </label>
+    `).join('')}
+  `;
 }
+
+window.toggleAllSubjects = function(checked) {
+  document.querySelectorAll('.subject-checkbox').forEach(cb => {
+    cb.checked = checked;
+  });
+  onSubjectChange();
+};
+
+window.toggleAllTopics = function(checked) {
+  document.querySelectorAll('.topic-checkbox').forEach(cb => {
+    cb.checked = checked;
+  });
+  updateAvailableCount();
+};
 
 window.onSubjectChange = function() {
   const selectedSubjectIds = getSelectedSubjectIds();
@@ -212,21 +266,20 @@ window.onSubjectChange = function() {
 };
 
 function getSelectedSubjectIds() {
-  const checkboxes = document.querySelectorAll(
-    '#subjectCheckboxes input[type="checkbox"]:checked'
-  );
-  return Array.from(checkboxes).map(cb => cb.value);
+  return Array.from(
+    document.querySelectorAll('.subject-checkbox:checked')
+  ).map(cb => cb.value);
 }
 
 function getSelectedTopicIds() {
-  const checkboxes = document.querySelectorAll(
-    '#topicCheckboxes input[type="checkbox"]:checked'
-  );
-  return Array.from(checkboxes).map(cb => cb.value);
+  return Array.from(
+    document.querySelectorAll('.topic-checkbox:checked')
+  ).map(cb => cb.value);
 }
 
 function renderTopicCheckboxes(subjectIds) {
   const container = document.getElementById('topicCheckboxes');
+  if (!container) return;
 
   if (subjectIds.length === 0) {
     container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first to see topics.</p>';
@@ -242,26 +295,40 @@ function renderTopicCheckboxes(subjectIds) {
     return;
   }
 
-  // Group by subject
-  let html = '';
+  let html = `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
+                  background:#EFF6FF;border-radius:var(--radius-sm);cursor:pointer;
+                  border:1.5px solid var(--primary);margin-bottom:6px;">
+      <input type="checkbox" id="selectAllTopics"
+        onchange="toggleAllTopics(this.checked)"
+        style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
+      <span style="font-size:14px;font-weight:700;color:var(--primary);">
+        ✅ Select All Topics
+      </span>
+    </label>
+  `;
+
   subjectIds.forEach(sId => {
     const subject = subjectsCache.find(s => s.id === sId);
     const subjectTopics = filteredTopics.filter(t => t.subjectId === sId);
     if (subjectTopics.length === 0) return;
 
     html += `
-      <div style="margin-bottom:8px;">
-        <p style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;">
-          ${subject?.name || ''}
+      <div style="margin-bottom:10px;">
+        <p style="font-size:12px;font-weight:700;color:var(--primary);
+                  margin-bottom:6px;padding-left:4px;">
+          📚 ${subject?.name || ''}
         </p>
         ${subjectTopics.map(t => `
           <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
-                        background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;
-                        border:1px solid var(--border);margin-bottom:4px;">
-            <input type="checkbox" value="${t.id}"
+                        background:var(--bg);border-radius:var(--radius-sm);
+                        cursor:pointer;border:1px solid var(--border);
+                        margin-bottom:4px;">
+            <input type="checkbox" value="${t.id}" class="topic-checkbox"
               onchange="updateAvailableCount()"
-              style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
-            <span style="font-size:13px;">${t.name}</span>
+              style="width:18px;height:18px;cursor:pointer;
+                     accent-color:var(--primary);"/>
+            <span style="font-size:13px;">📖 ${t.name}</span>
           </label>
         `).join('')}
       </div>
@@ -271,17 +338,17 @@ function renderTopicCheckboxes(subjectIds) {
   container.innerHTML = html;
 }
 
-// ── UPDATE AVAILABLE QUESTION COUNT ──
+// ── UPDATE AVAILABLE COUNT ──
 window.updateAvailableCount = function() {
   const topicIds = getSelectedTopicIds();
   const sources = [];
-  if (document.getElementById('sourcePYQ').checked) sources.push('PYQ');
-  if (document.getElementById('sourceIMP').checked) sources.push('IMP');
+  if (document.getElementById('sourcePYQ')?.checked) sources.push('PYQ');
+  if (document.getElementById('sourceIMP')?.checked) sources.push('IMP');
 
   const difficulties = [];
-  if (document.getElementById('diffEasy').checked) difficulties.push('easy');
-  if (document.getElementById('diffMedium').checked) difficulties.push('medium');
-  if (document.getElementById('diffHard').checked) difficulties.push('hard');
+  if (document.getElementById('diffEasy')?.checked) difficulties.push('easy');
+  if (document.getElementById('diffMedium')?.checked) difficulties.push('medium');
+  if (document.getElementById('diffHard')?.checked) difficulties.push('hard');
 
   const available = questionsCache.filter(q => {
     const matchTopic = topicIds.length === 0 || topicIds.includes(q.topicId);
@@ -291,10 +358,13 @@ window.updateAvailableCount = function() {
   });
 
   const info = document.getElementById('availableCountInfo');
-  info.textContent = topicIds.length === 0
-    ? 'Select topics to see available questions.'
-    : `✅ ${available.length} questions available matching your filters.`;
-  info.style.color = available.length > 0 ? 'var(--success)' : 'var(--danger)';
+  if (info) {
+    info.textContent = topicIds.length === 0
+      ? 'Select topics to see available questions.'
+      : `✅ ${available.length} questions available matching your filters.`;
+    info.style.color = available.length > 0
+      ? 'var(--success)' : 'var(--danger)';
+  }
 
   checkMarksWarning();
 };
@@ -327,7 +397,10 @@ window.deleteTest = async function(testId) {
     await deleteDoc(doc(db, 'tests', testId));
     showToast('Test deleted!', 'success');
     await loadTests();
-  } catch(e) { showToast('Error deleting', 'error'); console.error(e); }
+  } catch(e) {
+    showToast('Error deleting', 'error');
+    console.error(e);
+  }
 };
 
 // ── SHARE & RANK ──
@@ -355,6 +428,7 @@ window.showCreateForm = function() {
   isActive = false;
   freshQuestionsFromExcel = [];
   testTotalMarks = 0;
+
   document.getElementById('testFormTitle').textContent = 'Create Test';
   document.getElementById('testTitle').value = '';
   document.getElementById('testExamSelect').value = '';
@@ -393,14 +467,22 @@ window.editTest = async function(testId) {
       isActive ? 'var(--primary)' : '#CBD5E1';
 
     if (t.activateAt) {
-      const d = t.activateAt.toDate ? t.activateAt.toDate() : new Date(t.activateAt);
-      document.getElementById('testActivateAt').value = d.toISOString().slice(0,16);
-    } else { document.getElementById('testActivateAt').value = ''; }
+      const d = t.activateAt.toDate
+        ? t.activateAt.toDate() : new Date(t.activateAt);
+      document.getElementById('testActivateAt').value =
+        d.toISOString().slice(0,16);
+    } else {
+      document.getElementById('testActivateAt').value = '';
+    }
 
     if (t.expiresAt) {
-      const d = t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt);
-      document.getElementById('testExpiresAt').value = d.toISOString().slice(0,16);
-    } else { document.getElementById('testExpiresAt').value = ''; }
+      const d = t.expiresAt.toDate
+        ? t.expiresAt.toDate() : new Date(t.expiresAt);
+      document.getElementById('testExpiresAt').value =
+        d.toISOString().slice(0,16);
+    } else {
+      document.getElementById('testExpiresAt').value = '';
+    }
 
     document.getElementById('testsListSection').style.display = 'none';
     document.getElementById('testForm').style.display = 'block';
@@ -450,7 +532,10 @@ window.saveTestDetails = async function() {
     await loadSections(currentTestId);
     updateMarksDisplay();
 
-  } catch(e) { showToast('Error saving', 'error'); console.error(e); }
+  } catch(e) {
+    showToast('Error saving', 'error');
+    console.error(e);
+  }
 
   btn.disabled = false; btn.textContent = 'Save & Add Sections';
 };
@@ -459,7 +544,9 @@ window.saveTestDetails = async function() {
 async function loadSections(testId) {
   const list = document.getElementById('sectionsList');
   try {
-    const snap = await getDocs(collection(db, 'tests', testId, 'sections'));
+    const snap = await getDocs(
+      collection(db, 'tests', testId, 'sections')
+    );
     sectionsCache = [];
     snap.forEach(d => sectionsCache.push({ id: d.id, ...d.data() }));
     sectionsCache.sort((a, b) => (a.order||0) - (b.order||0));
@@ -472,19 +559,26 @@ async function loadSections(testId) {
     }
 
     list.innerHTML = sectionsCache.map(s => {
-      const sectionMarks = (s.questionIds?.length || 0) * (s.marksPerQ || 1);
+      const sectionMarks =
+        (s.questionIds?.length || 0) * (s.marksPerQ || 1);
       return `
         <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;
+                      align-items:center;margin-bottom:8px;">
             <h4 style="font-size:14px;font-weight:700;">${s.title}</h4>
-            <button onclick="deleteSection('${s.id}')" class="btn btn-sm"
+            <button onclick="deleteSection('${s.id}')"
+              class="btn btn-sm"
               style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
           </div>
-          <div style="font-size:12px;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:12px;color:var(--text-secondary);
+                      display:flex;flex-wrap:wrap;gap:8px;">
             <span>📝 ${s.questionIds?.length || 0} questions</span>
             <span>✅ ${s.marksPerQ} marks/Q</span>
-            <span>❌ ${s.negativeMarks > 0 ? '-'+s.negativeMarks : 'No negative'}</span>
-            <span style="color:var(--primary);font-weight:600;">🏆 ${sectionMarks} marks total</span>
+            <span>❌ ${s.negativeMarks > 0
+              ? '-'+s.negativeMarks : 'No negative'}</span>
+            <span style="color:var(--primary);font-weight:600;">
+              🏆 ${sectionMarks} marks total
+            </span>
           </div>
         </div>
       `;
@@ -495,6 +589,8 @@ async function loadSections(testId) {
 
 window.showAddSection = function() {
   freshQuestionsFromExcel = [];
+
+  // Reset form
   document.getElementById('freshQStatus').style.display = 'none';
   document.getElementById('sectionTitle').value = '';
   document.getElementById('marksPerQ').value = '1';
@@ -503,19 +599,21 @@ window.showAddSection = function() {
   document.getElementById('marksWarning').style.display = 'none';
   document.getElementById('availableCountInfo').textContent =
     'Select subjects, topics and filters to see available questions.';
-  document.getElementById('availableCountInfo').style.color = 'var(--text-secondary)';
+  document.getElementById('availableCountInfo').style.color =
+    'var(--text-secondary)';
 
-  // Reset all checkboxes
-  document.querySelectorAll('#subjectCheckboxes input').forEach(cb => cb.checked = false);
+  // Reset source checkboxes
   document.getElementById('sourcePYQ').checked = false;
   document.getElementById('sourceIMP').checked = true;
   document.getElementById('diffEasy').checked = true;
   document.getElementById('diffMedium').checked = true;
   document.getElementById('diffHard').checked = true;
+
+  // Reset topic list
   document.getElementById('topicCheckboxes').innerHTML =
     '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first to see topics.</p>';
 
-  // Render subject checkboxes
+  // Render subject checkboxes with fresh data
   renderSubjectCheckboxes();
 
   document.getElementById('sectionForm').style.display = 'block';
@@ -545,9 +643,9 @@ window.saveSection = async function() {
     return;
   }
 
-  if (sectionMarks > remaining && freshQuestionsFromExcel.length === 0) {
+  if (freshQuestionsFromExcel.length === 0 && sectionMarks > remaining) {
     showToast(
-      `Warning: Section uses ${sectionMarks} marks but only ${remaining} remaining. Adjust and try again.`,
+      `Warning: ${sectionMarks} marks needed but only ${remaining} remaining. Please adjust.`,
       'warning'
     );
     return;
@@ -560,7 +658,6 @@ window.saveSection = async function() {
     let questionIds = [];
 
     if (freshQuestionsFromExcel.length > 0) {
-      // Save fresh questions from Excel
       showToast('Saving fresh questions...', 'info');
       for (const qData of freshQuestionsFromExcel) {
         const ref = await addDoc(collection(db, 'questions'), {
@@ -572,7 +669,6 @@ window.saveSection = async function() {
       document.getElementById('freshQStatus').style.display = 'none';
 
     } else {
-      // Filter questions based on selections
       const topicIds = getSelectedTopicIds();
       const sources = [];
       if (document.getElementById('sourcePYQ').checked) sources.push('PYQ');
@@ -596,12 +692,10 @@ window.saveSection = async function() {
         return;
       }
 
-      // Shuffle and pick
       const shuffled = filtered.sort(() => Math.random() - 0.5);
       questionIds = shuffled.slice(0, questionCount).map(q => q.id);
     }
 
-    // Save section
     await addDoc(collection(db, 'tests', currentTestId, 'sections'), {
       title, questionIds, marksPerQ, negativeMarks,
       order: sectionsCache.length + 1,
@@ -624,7 +718,9 @@ window.saveSection = async function() {
 window.deleteSection = async function(sectionId) {
   if (!confirm('Delete this section?')) return;
   try {
-    await deleteDoc(doc(db, 'tests', currentTestId, 'sections', sectionId));
+    await deleteDoc(
+      doc(db, 'tests', currentTestId, 'sections', sectionId)
+    );
     showToast('Section deleted!', 'success');
     await loadSections(currentTestId);
     updateMarksDisplay();
@@ -638,10 +734,10 @@ window.finishTest = async function() {
   }
 
   const used = getUsedMarks();
-  if (used !== testTotalMarks) {
+  if (used !== testTotalMarks && testTotalMarks > 0) {
     const diff = testTotalMarks - used;
     if (!confirm(
-      `Warning: Used marks (${used}) ${diff > 0 ? 'is less than' : 'exceeds'} total marks (${testTotalMarks}) by ${Math.abs(diff)}. Publish anyway?`
+      `Warning: Marks used (${used}) ${diff > 0 ? 'is less than' : 'exceeds'} total marks (${testTotalMarks}) by ${Math.abs(diff)}. Publish anyway?`
     )) return;
   }
 
