@@ -8,6 +8,7 @@ import {
   collection, getDocs, addDoc, updateDoc,
   deleteDoc, doc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs';
 
 let subjectsCache = [];
 let topicsCache = [];
@@ -30,11 +31,15 @@ async function loadAll() {
 
 // ── TAB SWITCHER ──
 window.switchTab = function(tab) {
-  [1,2,3].forEach(i => {
-    document.getElementById(`section${i}`).style.display = i === tab ? 'block' : 'none';
-    document.getElementById(`tab${i}`).style.background = i === tab ? 'white' : 'transparent';
-    document.getElementById(`tab${i}`).style.color = i === tab ? 'var(--primary)' : 'var(--text-secondary)';
-    document.getElementById(`tab${i}`).style.boxShadow = i === tab ? 'var(--shadow-sm)' : 'none';
+  [1,2,3,4].forEach(i => {
+    document.getElementById(`section${i}`).style.display =
+      i === tab ? 'block' : 'none';
+    document.getElementById(`tab${i}`).style.background =
+      i === tab ? 'white' : 'transparent';
+    document.getElementById(`tab${i}`).style.color =
+      i === tab ? 'var(--primary)' : 'var(--text-secondary)';
+    document.getElementById(`tab${i}`).style.boxShadow =
+      i === tab ? 'var(--shadow-sm)' : 'none';
   });
 };
 
@@ -50,10 +55,9 @@ async function loadSubjects() {
 
     loader.style.display = 'none';
 
-    // Populate subject dropdowns
     const sel = document.getElementById('topicSubjectSelect');
-    sel.innerHTML = '<option value="">Select Subject</option>';
     const sel2 = document.getElementById('syllabusSubjectSelect');
+    sel.innerHTML = '<option value="">Select Subject</option>';
     sel2.innerHTML = '<option value="">Select Subject</option>';
     subjectsCache.forEach(s => {
       sel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
@@ -72,7 +76,7 @@ async function loadSubjects() {
           <h3>${s.name}</h3>
           <p>${s.description || ''}</p>
         </div>
-        <div style="display:flex; gap:6px; margin-left:auto;">
+        <div style="display:flex;gap:6px;margin-left:auto;">
           <button onclick="editSubject('${s.id}')" class="btn btn-sm btn-outline">Edit</button>
           <button onclick="deleteSubject('${s.id}')" class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
         </div>
@@ -113,18 +117,21 @@ window.saveSubject = async function() {
   const name = document.getElementById('subjectName').value.trim();
   const desc = document.getElementById('subjectDesc').value.trim();
   const order = parseInt(document.getElementById('subjectOrder').value) || 0;
-  if (!name) { showToast('Enter subject name', 'error'); return; }
+  if (!name) { showToast('Enter subject name','error'); return; }
 
   const btn = document.getElementById('saveSubjectBtn');
   btn.disabled = true; btn.textContent = 'Saving...';
 
   try {
     if (editingSubjectId) {
-      await updateDoc(doc(db,'subjects',editingSubjectId), { name, description:desc, order, isActive:true });
-      showToast('Subject updated!', 'success');
+      await updateDoc(doc(db,'subjects',editingSubjectId),
+        { name, description:desc, order, isActive:true });
+      showToast('Subject updated!','success');
     } else {
-      await addDoc(collection(db,'subjects'), { name, description:desc, order, isActive:true, createdAt:serverTimestamp() });
-      showToast('Subject added!', 'success');
+      await addDoc(collection(db,'subjects'),
+        { name, description:desc, order, isActive:true,
+          createdAt:serverTimestamp() });
+      showToast('Subject added!','success');
     }
     hideSubjectForm();
     await loadSubjects();
@@ -168,7 +175,7 @@ async function loadTopics() {
             <h3>${t.name}</h3>
             <p>${subject ? subject.name : 'Unknown subject'}</p>
           </div>
-          <div style="display:flex; gap:6px; margin-left:auto;">
+          <div style="display:flex;gap:6px;margin-left:auto;">
             <button onclick="editTopic('${t.id}')" class="btn btn-sm btn-outline">Edit</button>
             <button onclick="deleteTopic('${t.id}')" class="btn btn-sm" style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
           </div>
@@ -221,10 +228,13 @@ window.saveTopic = async function() {
 
   try {
     if (editingTopicId) {
-      await updateDoc(doc(db,'topics',editingTopicId), { name, description:desc, subjectId, order, isActive:true });
+      await updateDoc(doc(db,'topics',editingTopicId),
+        { name, description:desc, subjectId, order, isActive:true });
       showToast('Topic updated!','success');
     } else {
-      await addDoc(collection(db,'topics'), { name, description:desc, subjectId, order, isActive:true, createdAt:serverTimestamp() });
+      await addDoc(collection(db,'topics'),
+        { name, description:desc, subjectId, order, isActive:true,
+          createdAt:serverTimestamp() });
       showToast('Topic added!','success');
     }
     hideTopicForm();
@@ -307,7 +317,8 @@ window.saveSyllabus = async function() {
   btn.disabled = true; btn.textContent = 'Saving...';
 
   try {
-    await addDoc(collection(db,'examSyllabus'), { examId, subjectId, order, createdAt:serverTimestamp() });
+    await addDoc(collection(db,'examSyllabus'),
+      { examId, subjectId, order, createdAt:serverTimestamp() });
     showToast('Subject linked to exam!','success');
     hideSyllabusForm();
     await loadSyllabus();
@@ -325,8 +336,154 @@ window.deleteSyllabus = async function(id) {
   } catch(e) { showToast('Error','error'); }
 };
 
-// Toast
-window.showToast = function(message, type='info') {
+// ── BULK UPLOAD — SUBJECTS ──
+window.downloadSubjectTemplate = function() {
+  const wb = XLSX.utils.book_new();
+  const headers = ['Subject Name', 'Description', 'Order'];
+  const sample = ['Indian Constitution', 'Bhartiya Bandharan', '1'];
+  const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+  ws['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Subjects');
+  XLSX.writeFile(wb, 'subjects_template.xlsx');
+  showToast('Template downloaded!', 'success');
+};
+
+window.handleSubjectUpload = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('subjectUploadStatus');
+  status.style.display = 'block';
+  status.style.background = '#EFF6FF';
+  status.style.color = 'var(--primary)';
+  status.textContent = 'Reading file...';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const dataRows = rows.slice(1).filter(row => row[0]);
+
+    if (dataRows.length === 0) {
+      status.style.background = '#FEE2E2';
+      status.style.color = '#DC2626';
+      status.textContent = 'No data found in file.';
+      return;
+    }
+
+    status.textContent = `Found ${dataRows.length} subjects. Uploading...`;
+    let success = 0; let failed = 0;
+
+    for (const row of dataRows) {
+      try {
+        const name = String(row[0] || '').trim();
+        const desc = String(row[1] || '').trim();
+        const order = parseInt(row[2]) || 0;
+        if (!name) { failed++; continue; }
+
+        await addDoc(collection(db, 'subjects'), {
+          name, description: desc, order,
+          isActive: true, createdAt: serverTimestamp()
+        });
+        success++;
+      } catch(e) { failed++; }
+    }
+
+    status.style.background = '#DCFCE7';
+    status.style.color = 'var(--success)';
+    status.textContent = `✅ Done! ${success} subjects uploaded. ${failed > 0 ? failed + ' failed.' : ''}`;
+    await loadSubjects();
+
+  } catch(e) {
+    status.style.background = '#FEE2E2';
+    status.style.color = '#DC2626';
+    status.textContent = 'Error reading file.';
+    console.error(e);
+  }
+
+  event.target.value = '';
+};
+
+// ── BULK UPLOAD — TOPICS ──
+window.downloadTopicTemplate = function() {
+  const wb = XLSX.utils.book_new();
+  const headers = ['Subject Name', 'Topic Name', 'Description', 'Order'];
+  const sample = ['Indian Constitution', 'Fundamental Rights', 'Mulbhut Adhikaro', '1'];
+  const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+  ws['!cols'] = [{ wch: 25 }, { wch: 25 }, { wch: 30 }, { wch: 10 }];
+  XLSX.utils.book_append_sheet(wb, ws, 'Topics');
+  XLSX.writeFile(wb, 'topics_template.xlsx');
+  showToast('Template downloaded!', 'success');
+};
+
+window.handleTopicUpload = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('topicUploadStatus');
+  status.style.display = 'block';
+  status.style.background = '#EFF6FF';
+  status.style.color = 'var(--primary)';
+  status.textContent = 'Reading file...';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const dataRows = rows.slice(1).filter(row => row[0]);
+
+    if (dataRows.length === 0) {
+      status.style.background = '#FEE2E2';
+      status.style.color = '#DC2626';
+      status.textContent = 'No data found in file.';
+      return;
+    }
+
+    status.textContent = `Found ${dataRows.length} topics. Uploading...`;
+    let success = 0; let failed = 0;
+
+    for (const row of dataRows) {
+      try {
+        const subjectName = String(row[0] || '').trim();
+        const topicName = String(row[1] || '').trim();
+        const desc = String(row[2] || '').trim();
+        const order = parseInt(row[3]) || 0;
+
+        if (!subjectName || !topicName) { failed++; continue; }
+
+        const subject = subjectsCache.find(s =>
+          s.name.toLowerCase() === subjectName.toLowerCase()
+        );
+        if (!subject) { failed++; continue; }
+
+        await addDoc(collection(db, 'topics'), {
+          name: topicName, description: desc,
+          subjectId: subject.id, order,
+          isActive: true, createdAt: serverTimestamp()
+        });
+        success++;
+      } catch(e) { failed++; }
+    }
+
+    status.style.background = '#DCFCE7';
+    status.style.color = 'var(--success)';
+    status.textContent = `✅ Done! ${success} topics uploaded. ${failed > 0 ? failed + ' failed (check subject names).' : ''}`;
+    await loadTopics();
+
+  } catch(e) {
+    status.style.background = '#FEE2E2';
+    status.style.color = '#DC2626';
+    status.textContent = 'Error reading file.';
+    console.error(e);
+  }
+
+  event.target.value = '';
+};
+
+// ── TOAST ──
+window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
   const toast = document.createElement('div');

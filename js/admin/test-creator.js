@@ -8,6 +8,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc,
   doc, serverTimestamp, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs';
 
 let examsCache = [];
 let topicsCache = [];
@@ -15,6 +16,7 @@ let questionsCache = [];
 let currentTestId = null;
 let sectionsCache = [];
 let isActive = false;
+let freshQuestionsFromExcel = [];
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'index.html'; return; }
@@ -24,6 +26,7 @@ onAuthStateChanged(auth, async (user) => {
   await loadTests();
 });
 
+// ── LOAD DATA ──
 async function loadExams() {
   const snap = await getDocs(collection(db, 'exams'));
   examsCache = [];
@@ -50,6 +53,7 @@ async function loadQuestions() {
   snap.forEach(d => questionsCache.push({ id: d.id, ...d.data() }));
 }
 
+// ── LOAD TESTS LIST ──
 async function loadTests() {
   const loader = document.getElementById('testsLoader');
   const list = document.getElementById('testsList');
@@ -88,10 +92,12 @@ async function loadTests() {
       return `
         <div class="card">
           <div style="display:flex; align-items:flex-start; gap:12px; margin-bottom:12px;">
-            <div class="exam-body-icon" style="background:linear-gradient(135deg,#DC2626,#b91c1c);font-size:20px;flex-shrink:0;">🎯</div>
+            <div class="exam-body-icon"
+              style="background:linear-gradient(135deg,#DC2626,#b91c1c);
+                     font-size:20px; flex-shrink:0;">🎯</div>
             <div style="flex:1;">
-              <h3 style="font-size:14px;font-weight:700;">${t.title}</h3>
-              <p style="font-size:12px;color:var(--text-secondary);">
+              <h3 style="font-size:14px; font-weight:700;">${t.title}</h3>
+              <p style="font-size:12px; color:var(--text-secondary);">
                 ${t.duration} min • ${t.totalMarks} marks •
                 ${t.isActive ? '🟢 Active' : '🔴 Inactive'}
               </p>
@@ -99,18 +105,30 @@ async function loadTests() {
             </div>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button onclick="editTest('${t.id}')" class="btn btn-sm btn-outline">Edit</button>
-            <button onclick="toggleTestActive('${t.id}', ${t.isActive})" class="btn btn-sm"
+            <button onclick="editTest('${t.id}')"
+              class="btn btn-sm btn-outline">Edit</button>
+            <button onclick="toggleTestActive('${t.id}', ${t.isActive})"
+              class="btn btn-sm"
               style="background:${t.isActive ? '#FEF3C7' : '#DCFCE7'};
-                     color:${t.isActive ? '#D97706' : 'var(--success)'};border:none;">
+                     color:${t.isActive ? '#D97706' : 'var(--success)'};
+                     border:none;">
               ${t.isActive ? 'Deactivate' : 'Activate'}
             </button>
-            <button onclick="shareTest('${t.id}', '${encodeURIComponent(t.title)}')" class="btn btn-sm"
-              style="background:#E0F2FE;color:#0284C7;border:none;">📤 Share</button>
-            <button onclick="viewRankBoard('${t.id}')" class="btn btn-sm"
-              style="background:#F3E8FF;color:#7C3AED;border:none;">🏆 Ranks</button>
-            <button onclick="deleteTest('${t.id}')" class="btn btn-sm"
-              style="background:#FEE2E2;color:#DC2626;border:none;">Delete</button>
+            <button onclick="shareTest('${t.id}','${encodeURIComponent(t.title)}')"
+              class="btn btn-sm"
+              style="background:#E0F2FE;color:#0284C7;border:none;">
+              📤 Share
+            </button>
+            <button onclick="viewRankBoard('${t.id}')"
+              class="btn btn-sm"
+              style="background:#F3E8FF;color:#7C3AED;border:none;">
+              🏆 Ranks
+            </button>
+            <button onclick="deleteTest('${t.id}')"
+              class="btn btn-sm"
+              style="background:#FEE2E2;color:#DC2626;border:none;">
+              Delete
+            </button>
           </div>
         </div>
       `;
@@ -120,6 +138,7 @@ async function loadTests() {
   } catch(e) { console.error(e); }
 }
 
+// ── TOGGLE ACTIVE ──
 window.toggleActive = function() {
   isActive = !isActive;
   document.getElementById('toggleSlider').style.background =
@@ -134,6 +153,7 @@ window.toggleTestActive = async function(testId, current) {
   } catch(e) { showToast('Error', 'error'); }
 };
 
+// ── DELETE TEST ──
 window.deleteTest = async function(testId) {
   if (!confirm('Delete this test permanently? This cannot be undone.')) return;
   try {
@@ -152,6 +172,7 @@ window.deleteTest = async function(testId) {
   }
 };
 
+// ── SHARE TEST ──
 window.shareTest = function(testId, encodedTitle) {
   const testTitle = decodeURIComponent(encodedTitle);
   const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
@@ -165,14 +186,17 @@ window.shareTest = function(testId, encodedTitle) {
   }
 };
 
+// ── VIEW RANK BOARD ──
 window.viewRankBoard = function(testId) {
   window.open(`/rankboard.html?testId=${testId}`, '_blank');
 };
 
+// ── FORM ──
 window.showCreateForm = function() {
   currentTestId = null;
   sectionsCache = [];
   isActive = false;
+  freshQuestionsFromExcel = [];
   document.getElementById('testFormTitle').textContent = 'Create Test';
   document.getElementById('testTitle').value = '';
   document.getElementById('testExamSelect').value = '';
@@ -230,11 +254,12 @@ window.editTest = async function(testId) {
     document.getElementById('testsListSection').style.display = 'none';
     document.getElementById('testForm').style.display = 'block';
     document.getElementById('sectionsArea').style.display = 'block';
-
     await loadSections(testId);
+
   } catch(e) { console.error(e); }
 };
 
+// ── SAVE TEST ──
 window.saveTestDetails = async function() {
   const title = document.getElementById('testTitle').value.trim();
   const examId = document.getElementById('testExamSelect').value;
@@ -276,6 +301,7 @@ window.saveTestDetails = async function() {
   btn.disabled = false; btn.textContent = 'Save & Add Sections';
 };
 
+// ── SECTIONS ──
 async function loadSections(testId) {
   const list = document.getElementById('sectionsList');
   try {
@@ -287,21 +313,25 @@ async function loadSections(testId) {
     sectionsCache.sort((a, b) => (a.order||0) - (b.order||0));
 
     if (sectionsCache.length === 0) {
-      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet.</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet. Add a section above.</p>';
       return;
     }
 
     list.innerHTML = sectionsCache.map(s => `
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-          <h4 style="font-size:14px;font-weight:700;">${s.title}</h4>
-          <button onclick="deleteSection('${s.id}')" class="btn btn-sm"
+        <div style="display:flex; justify-content:space-between;
+                    align-items:center; margin-bottom:8px;">
+          <h4 style="font-size:14px; font-weight:700;">${s.title}</h4>
+          <button onclick="deleteSection('${s.id}')"
+            class="btn btn-sm"
             style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
         </div>
-        <div style="font-size:12px;color:var(--text-secondary);">
+        <div style="font-size:12px; color:var(--text-secondary);">
           ${s.questionIds?.length || 0} questions •
           ${s.marksPerQ} marks each •
-          ${s.negativeMarks > 0 ? '-'+s.negativeMarks+' negative' : 'No negative'}
+          ${s.negativeMarks > 0
+            ? '-' + s.negativeMarks + ' negative'
+            : 'No negative marking'}
         </div>
       </div>
     `).join('');
@@ -310,12 +340,15 @@ async function loadSections(testId) {
 }
 
 window.showAddSection = function() {
+  freshQuestionsFromExcel = [];
+  document.getElementById('freshQStatus').style.display = 'none';
   document.getElementById('sectionForm').style.display = 'block';
-  document.getElementById('sectionForm').scrollIntoView({ behavior:'smooth' });
+  document.getElementById('sectionForm').scrollIntoView({ behavior: 'smooth' });
 };
 
 window.hideSectionForm = function() {
   document.getElementById('sectionForm').style.display = 'none';
+  freshQuestionsFromExcel = [];
 };
 
 window.saveSection = async function() {
@@ -333,8 +366,23 @@ window.saveSection = async function() {
 
   try {
     let questionIds = [];
-    if (topicId) {
-      const topicQuestions = questionsCache.filter(q => q.topicId === topicId);
+
+    if (freshQuestionsFromExcel.length > 0 && !topicId) {
+      // Save fresh questions from Excel first
+      showToast('Saving fresh questions...', 'info');
+      for (const qData of freshQuestionsFromExcel) {
+        const ref = await addDoc(collection(db, 'questions'), {
+          ...qData, createdAt: serverTimestamp()
+        });
+        questionIds.push(ref.id);
+      }
+      freshQuestionsFromExcel = [];
+      document.getElementById('freshQStatus').style.display = 'none';
+    } else if (topicId) {
+      // Auto-select from existing questions by topic
+      const topicQuestions = questionsCache.filter(
+        q => q.topicId === topicId
+      );
       const shuffled = topicQuestions.sort(() => Math.random() - 0.5);
       questionIds = shuffled.slice(0, questionCount).map(q => q.id);
     }
@@ -376,10 +424,82 @@ window.finishTest = async function() {
     showToast('Add at least one section first', 'error');
     return;
   }
-  showToast('Test published! 🎉', 'success');
+  showToast('Test published successfully! 🎉', 'success');
   setTimeout(() => { hideCreateForm(); loadTests(); }, 1500);
 };
 
+// ── FRESH QUESTIONS EXCEL UPLOAD ──
+window.downloadFreshQTemplate = function() {
+  const wb = XLSX.utils.book_new();
+  const headers = [
+    'Question Text',
+    'Option A', 'Option B', 'Option C', 'Option D',
+    'Correct Answer (A/B/C/D)',
+    'Difficulty (easy/medium/hard)',
+    'Explanation'
+  ];
+  const sample = [
+    'Which article deals with Right to Equality?',
+    'Article 12', 'Article 14', 'Article 19', 'Article 21',
+    'B', 'medium',
+    'Article 14 deals with Right to Equality'
+  ];
+  const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
+  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+  XLSX.utils.book_append_sheet(wb, ws, 'Questions');
+  XLSX.writeFile(wb, 'fresh_questions_template.xlsx');
+  showToast('Template downloaded!', 'success');
+};
+
+window.handleFreshQUpload = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const status = document.getElementById('freshQStatus');
+  status.style.display = 'block';
+  status.style.background = '#EFF6FF';
+  status.style.color = 'var(--primary)';
+  status.textContent = 'Reading file...';
+
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const dataRows = rows.slice(1).filter(r => r[0]);
+
+    freshQuestionsFromExcel = dataRows.map(row => ({
+      questionText: String(row[0]||'').trim(),
+      options: [
+        String(row[1]||'').trim(),
+        String(row[2]||'').trim(),
+        String(row[3]||'').trim(),
+        String(row[4]||'').trim()
+      ],
+      correctOption: ['A','B','C','D'].indexOf(
+        String(row[5]||'A').trim().toUpperCase()
+      ),
+      difficulty: String(row[6]||'medium').trim().toLowerCase(),
+      explanation: String(row[7]||'').trim(),
+      type: 'IMP'
+    })).filter(q => q.questionText && q.options[0]);
+
+    status.style.background = '#DCFCE7';
+    status.style.color = 'var(--success)';
+    status.textContent =
+      `✅ ${freshQuestionsFromExcel.length} questions ready. Now click "Add Section" to save.`;
+
+  } catch(e) {
+    status.style.background = '#FEE2E2';
+    status.style.color = '#DC2626';
+    status.textContent = 'Error reading file. Make sure it is a valid Excel file.';
+    console.error(e);
+  }
+
+  event.target.value = '';
+};
+
+// ── TOAST ──
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;

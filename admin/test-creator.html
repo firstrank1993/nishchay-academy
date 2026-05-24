@@ -17,6 +17,7 @@
 
   <main class="page-container">
 
+    <!-- TESTS LIST -->
     <div id="testsListSection">
       <button onclick="showCreateForm()" class="btn btn-primary btn-full" style="margin:12px 0 16px;">+ Create New Test</button>
       <div id="testsLoader" class="card-list">
@@ -26,60 +27,107 @@
       <div id="testsList" class="card-list" style="display:none;"></div>
     </div>
 
+    <!-- CREATE/EDIT TEST FORM -->
     <div id="testForm" style="display:none;">
+
       <div class="card" style="margin-bottom:16px;">
         <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;" id="testFormTitle">Create Test</h3>
 
-        <input id="testTitle" type="text" placeholder="Test Title (e.g. Talati Mock Test 1)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+        <input id="testTitle" type="text" placeholder="Test Title (e.g. Talati Mock Test 1)"
+          style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
 
-        <select id="testExamSelect" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+        <select id="testExamSelect"
+          style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
           <option value="">Select Exam</option>
         </select>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-          <input id="testDuration" type="number" placeholder="Duration (mins)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
-          <input id="testTotalMarks" type="number" placeholder="Total Marks" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+          <input id="testDuration" type="number" placeholder="Duration (mins)"
+            style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+          <input id="testTotalMarks" type="number" placeholder="Total Marks"
+            style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
         </div>
 
+        <!-- Active Toggle -->
         <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px;">
           <span style="font-size:14px; font-weight:500;">Active (visible to students)</span>
           <label style="position:relative; display:inline-block; width:44px; height:24px;">
             <input type="checkbox" id="testActive" style="opacity:0; width:0; height:0;">
-            <span onclick="toggleActive()" id="toggleSlider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#CBD5E1; border-radius:24px; transition:0.3s;"></span>
+            <span onclick="toggleActive()" id="toggleSlider"
+              style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background:#CBD5E1; border-radius:24px; transition:0.3s;"></span>
           </label>
         </div>
 
+        <!-- Activation Date -->
         <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Activation Date & Time (optional)</label>
-        <input id="testActivateAt" type="datetime-local" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 10px; font-family:Inter,sans-serif;"/>
+        <input id="testActivateAt" type="datetime-local"
+          style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 10px; font-family:Inter,sans-serif;"/>
 
+        <!-- Expiry Date -->
         <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Expiry Date & Time (optional)</label>
-        <input id="testExpiresAt" type="datetime-local" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 14px; font-family:Inter,sans-serif;"/>
+        <input id="testExpiresAt" type="datetime-local"
+          style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin:6px 0 14px; font-family:Inter,sans-serif;"/>
 
         <div style="display:flex; gap:8px;">
-          <button onclick="saveTestDetails()" class="btn btn-primary" style="flex:1;" id="saveTestBtn">Save & Add Sections</button>
+          <button onclick="saveTestDetails()" class="btn btn-primary" style="flex:1;" id="saveTestBtn">
+            Save & Add Sections
+          </button>
           <button onclick="hideCreateForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
         </div>
       </div>
 
+      <!-- SECTIONS AREA -->
       <div id="sectionsArea" style="display:none;">
+
         <div class="section-header">
           <h2 class="section-title">Sections</h2>
           <button onclick="showAddSection()" class="btn btn-sm btn-primary">+ Add Section</button>
         </div>
 
+        <!-- Add Section Form -->
         <div id="sectionForm" style="display:none;" class="card">
           <h3 style="font-size:14px; font-weight:700; margin-bottom:12px;">Add Section</h3>
-          <input id="sectionTitle" type="text" placeholder="Section Title" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
-          <select id="sectionTopic" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
-            <option value="">Select Topic</option>
+
+          <input id="sectionTitle" type="text" placeholder="Section Title (e.g. Indian Constitution)"
+            style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+
+          <select id="sectionTopic"
+            style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;">
+            <option value="">Select Topic (to auto-pick questions)</option>
           </select>
+
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
-            <input id="marksPerQ" type="number" placeholder="Marks/Question" value="1" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
-            <input id="negativeMarks" type="number" placeholder="Negative Marks" value="0" step="0.25" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+            <input id="marksPerQ" type="number" placeholder="Marks/Question" value="1"
+              style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
+            <input id="negativeMarks" type="number" placeholder="Negative Marks" value="0" step="0.25"
+              style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; font-family:Inter,sans-serif;"/>
           </div>
-          <input id="questionCount" type="number" placeholder="Number of questions to pick" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
-          <div style="display:flex; gap:8px;">
-            <button onclick="saveSection()" class="btn btn-primary" style="flex:1;" id="saveSectionBtn">Add Section</button>
+
+          <input id="questionCount" type="number" placeholder="Number of questions to pick from topic"
+            style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
+
+          <!-- Fresh Questions Upload -->
+          <div style="text-align:center; padding:8px 0; font-size:12px; color:var(--text-secondary);">
+            — OR upload fresh questions via Excel —
+          </div>
+
+          <button onclick="downloadFreshQTemplate()" class="btn btn-outline btn-full" style="margin-bottom:8px;">
+            ⬇️ Download Fresh Questions Template
+          </button>
+
+          <input type="file" id="freshQFile" accept=".xlsx,.xls" style="display:none;"
+            onchange="handleFreshQUpload(event)"/>
+          <button onclick="document.getElementById('freshQFile').click()" class="btn btn-full"
+            style="background:#E0F2FE;color:#0284C7;border:none;margin-bottom:10px;">
+            📂 Upload Fresh Questions Excel
+          </button>
+
+          <div id="freshQStatus" style="display:none; padding:10px; border-radius:var(--radius-sm); font-size:12px; margin-bottom:10px;"></div>
+
+          <div style="display:flex; gap:8px; margin-top:4px;">
+            <button onclick="saveSection()" class="btn btn-primary" style="flex:1;" id="saveSectionBtn">
+              Add Section
+            </button>
             <button onclick="hideSectionForm()" class="btn btn-outline" style="flex:1;">Cancel</button>
           </div>
         </div>
@@ -89,7 +137,9 @@
         <button onclick="finishTest()" class="btn btn-primary btn-full" style="margin-top:16px;">
           ✅ Finish & Publish Test
         </button>
+
       </div>
+
     </div>
 
   </main>
