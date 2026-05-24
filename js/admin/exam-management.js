@@ -5,14 +5,15 @@
 import { auth, db } from '../firebase-config.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
-  collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp
+  collection, getDocs, addDoc, updateDoc,
+  deleteDoc, doc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 let editingBodyId = null;
 let editingExamId = null;
 let examBodiesCache = [];
+let examsCache = [];
 
-// Auth check
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'index.html'; return; }
   await loadExamBodies();
@@ -21,14 +22,22 @@ onAuthStateChanged(auth, async (user) => {
 
 // ── TAB SWITCHER ──
 window.switchTab = function(tab) {
-  document.getElementById('section1').style.display = tab === 1 ? 'block' : 'none';
-  document.getElementById('section2').style.display = tab === 2 ? 'block' : 'none';
-  document.getElementById('tab1').style.background = tab === 1 ? 'white' : 'transparent';
-  document.getElementById('tab1').style.color = tab === 1 ? 'var(--primary)' : 'var(--text-secondary)';
-  document.getElementById('tab1').style.boxShadow = tab === 1 ? 'var(--shadow-sm)' : 'none';
-  document.getElementById('tab2').style.background = tab === 2 ? 'white' : 'transparent';
-  document.getElementById('tab2').style.color = tab === 2 ? 'var(--primary)' : 'var(--text-secondary)';
-  document.getElementById('tab2').style.boxShadow = tab === 2 ? 'var(--shadow-sm)' : 'none';
+  document.getElementById('section1').style.display =
+    tab === 1 ? 'block' : 'none';
+  document.getElementById('section2').style.display =
+    tab === 2 ? 'block' : 'none';
+  document.getElementById('tab1').style.background =
+    tab === 1 ? 'white' : 'transparent';
+  document.getElementById('tab1').style.color =
+    tab === 1 ? 'var(--primary)' : 'var(--text-secondary)';
+  document.getElementById('tab1').style.boxShadow =
+    tab === 1 ? 'var(--shadow-sm)' : 'none';
+  document.getElementById('tab2').style.background =
+    tab === 2 ? 'white' : 'transparent';
+  document.getElementById('tab2').style.color =
+    tab === 2 ? 'var(--primary)' : 'var(--text-secondary)';
+  document.getElementById('tab2').style.boxShadow =
+    tab === 2 ? 'var(--shadow-sm)' : 'none';
 };
 
 // ── EXAM BODIES ──
@@ -39,13 +48,15 @@ async function loadExamBodies() {
   try {
     const snapshot = await getDocs(collection(db, 'examBodies'));
     examBodiesCache = [];
-    snapshot.forEach(d => examBodiesCache.push({ id: d.id, ...d.data() }));
-    examBodiesCache.sort((a, b) => (a.order || 0) - (b.order || 0));
+    snapshot.forEach(d =>
+      examBodiesCache.push({ id: d.id, ...d.data() })
+    );
+    examBodiesCache.sort((a, b) => (a.order||0) - (b.order||0));
 
     loader.style.display = 'none';
 
     if (examBodiesCache.length === 0) {
-      list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); font-size:13px; padding:20px;">No exam bodies yet</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:20px;">No exam bodies yet</p>';
       list.style.display = 'flex';
       return;
     }
@@ -57,9 +68,12 @@ async function loadExamBodies() {
           <h3>${body.name}</h3>
           <p>${body.description || ''}</p>
         </div>
-        <div style="display:flex; gap:6px; margin-left:auto;">
-          <button onclick="editBody('${body.id}')" class="btn btn-sm btn-outline">Edit</button>
-          <button onclick="deleteBody('${body.id}')" class="btn btn-sm" style="background:#FEE2E2; color:#DC2626; border:none;">Del</button>
+        <div style="display:flex;gap:6px;margin-left:auto;">
+          <button onclick="editBody('${body.id}')"
+            class="btn btn-sm btn-outline">Edit</button>
+          <button onclick="deleteBody('${body.id}')"
+            class="btn btn-sm"
+            style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
         </div>
       </div>
     `).join('');
@@ -69,12 +83,11 @@ async function loadExamBodies() {
     const select = document.getElementById('examBodySelect');
     select.innerHTML = '<option value="">Select Exam Body</option>';
     examBodiesCache.forEach(b => {
-      select.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+      select.innerHTML +=
+        `<option value="${b.id}">${b.name}</option>`;
     });
 
-  } catch (err) {
-    console.error(err);
-  }
+  } catch(err) { console.error(err); }
 }
 
 window.showAddBodyForm = function() {
@@ -112,26 +125,27 @@ window.saveExamBody = async function() {
   if (!name) { showToast('Please enter a name', 'error'); return; }
 
   const btn = document.getElementById('saveBodyBtn');
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = 'Saving...';
 
   try {
     if (editingBodyId) {
-      await updateDoc(doc(db, 'examBodies', editingBodyId), { name, description: desc, order, isActive: true });
+      await updateDoc(doc(db, 'examBodies', editingBodyId),
+        { name, description: desc, order, isActive: true });
       showToast('Exam body updated!', 'success');
     } else {
-      await addDoc(collection(db, 'examBodies'), { name, description: desc, order, isActive: true, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'examBodies'),
+        { name, description: desc, order, isActive: true,
+          createdAt: serverTimestamp() });
       showToast('Exam body added!', 'success');
     }
     hideBodyForm();
     await loadExamBodies();
-  } catch (err) {
+  } catch(err) {
     showToast('Error saving. Try again.', 'error');
     console.error(err);
   }
 
-  btn.disabled = false;
-  btn.textContent = 'Save';
+  btn.disabled = false; btn.textContent = 'Save';
 };
 
 window.deleteBody = async function(id) {
@@ -140,14 +154,10 @@ window.deleteBody = async function(id) {
     await deleteDoc(doc(db, 'examBodies', id));
     showToast('Deleted!', 'success');
     await loadExamBodies();
-  } catch (err) {
-    showToast('Error deleting.', 'error');
-  }
+  } catch(err) { showToast('Error deleting.', 'error'); }
 };
 
 // ── EXAMS ──
-let examsCache = [];
-
 async function loadExams() {
   const loader = document.getElementById('examsLoader');
   const list = document.getElementById('examsList');
@@ -156,12 +166,12 @@ async function loadExams() {
     const snapshot = await getDocs(collection(db, 'exams'));
     examsCache = [];
     snapshot.forEach(d => examsCache.push({ id: d.id, ...d.data() }));
-    examsCache.sort((a, b) => (a.order || 0) - (b.order || 0));
+    examsCache.sort((a, b) => (a.order||0) - (b.order||0));
 
     loader.style.display = 'none';
 
     if (examsCache.length === 0) {
-      list.innerHTML = '<p style="text-align:center; color:var(--text-secondary); font-size:13px; padding:20px;">No exams yet</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:20px;">No exams yet</p>';
       list.style.display = 'flex';
       return;
     }
@@ -170,25 +180,34 @@ async function loadExams() {
       const body = examBodiesCache.find(b => b.id === exam.examBodyId);
       return `
         <div class="exam-body-card">
-          <div class="exam-body-icon" style="background:linear-gradient(135deg,#0D47A1,#1a237e); font-size:11px;">
+          <div class="exam-body-icon"
+            style="background:linear-gradient(135deg,#0D47A1,#1a237e);
+                   font-size:11px;">
             ${exam.name.substring(0,4)}
           </div>
           <div class="exam-body-info">
             <h3>${exam.name}</h3>
             <p>${body ? body.name : 'Unknown body'}</p>
+            ${exam.syllabusUrl ? `
+              <a href="${exam.syllabusUrl}" target="_blank"
+                style="font-size:11px;color:var(--primary);">
+                📄 Syllabus PDF linked
+              </a>
+            ` : ''}
           </div>
-          <div style="display:flex; gap:6px; margin-left:auto;">
-            <button onclick="editExam('${exam.id}')" class="btn btn-sm btn-outline">Edit</button>
-            <button onclick="deleteExam('${exam.id}')" class="btn btn-sm" style="background:#FEE2E2; color:#DC2626; border:none;">Del</button>
+          <div style="display:flex;gap:6px;margin-left:auto;">
+            <button onclick="editExam('${exam.id}')"
+              class="btn btn-sm btn-outline">Edit</button>
+            <button onclick="deleteExam('${exam.id}')"
+              class="btn btn-sm"
+              style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
           </div>
         </div>
       `;
     }).join('');
     list.style.display = 'flex';
 
-  } catch (err) {
-    console.error(err);
-  }
+  } catch(err) { console.error(err); }
 }
 
 window.showAddExamForm = function() {
@@ -198,9 +217,9 @@ window.showAddExamForm = function() {
   document.getElementById('examDesc').value = '';
   document.getElementById('examOrder').value = '';
   document.getElementById('examBodySelect').value = '';
+  document.getElementById('examSyllabusUrl').value = '';
   document.getElementById('examForm').style.display = 'block';
   document.getElementById('examForm').scrollIntoView({ behavior: 'smooth' });
-  document.getElementById('examSyllabusUrl').value = '';
 };
 
 window.hideExamForm = function() {
@@ -216,8 +235,9 @@ window.editExam = function(id) {
   document.getElementById('examName').value = exam.name;
   document.getElementById('examDesc').value = exam.description || '';
   document.getElementById('examOrder').value = exam.order || '';
-  document.getElementById('examSyllabusUrl').value = exam.syllabusUrl || '';
   document.getElementById('examBodySelect').value = exam.examBodyId || '';
+  document.getElementById('examSyllabusUrl').value =
+    exam.syllabusUrl || '';
   document.getElementById('examForm').style.display = 'block';
   document.getElementById('examForm').scrollIntoView({ behavior: 'smooth' });
 };
@@ -227,32 +247,42 @@ window.saveExam = async function() {
   const name = document.getElementById('examName').value.trim();
   const desc = document.getElementById('examDesc').value.trim();
   const order = parseInt(document.getElementById('examOrder').value) || 0;
-  const syllabusUrl = document.getElementById('examSyllabusUrl').value.trim();
+  const syllabusUrl =
+    document.getElementById('examSyllabusUrl').value.trim();
 
-  if (!examBodyId) { showToast('Please select an exam body', 'error'); return; }
-  if (!name) { showToast('Please enter exam name', 'error'); return; }
+  if (!examBodyId) {
+    showToast('Please select an exam body', 'error'); return;
+  }
+  if (!name) {
+    showToast('Please enter exam name', 'error'); return;
+  }
 
   const btn = document.getElementById('saveExamBtn');
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
+  btn.disabled = true; btn.textContent = 'Saving...';
 
   try {
+    const data = {
+      name, description: desc, examBodyId,
+      order, isActive: true,
+      syllabusUrl: syllabusUrl || ''
+    };
+
     if (editingExamId) {
-      await updateDoc(doc(db, 'exams', editingExamId), { name, description: desc, examBodyId, order, isActive: true });
+      await updateDoc(doc(db, 'exams', editingExamId), data);
       showToast('Exam updated!', 'success');
     } else {
-      await addDoc(collection(db, 'exams'), { name, description: desc, examBodyId, order, isActive: true, createdAt: serverTimestamp() });
+      await addDoc(collection(db, 'exams'),
+        { ...data, createdAt: serverTimestamp() });
       showToast('Exam added!', 'success');
     }
     hideExamForm();
     await loadExams();
-  } catch (err) {
+  } catch(err) {
     showToast('Error saving. Try again.', 'error');
     console.error(err);
   }
 
-  btn.disabled = false;
-  btn.textContent = 'Save';
+  btn.disabled = false; btn.textContent = 'Save';
 };
 
 window.deleteExam = async function(id) {
@@ -261,9 +291,7 @@ window.deleteExam = async function(id) {
     await deleteDoc(doc(db, 'exams', id));
     showToast('Deleted!', 'success');
     await loadExams();
-  } catch (err) {
-    showToast('Error deleting.', 'error');
-  }
+  } catch(err) { showToast('Error deleting.', 'error'); }
 };
 
 // Toast
