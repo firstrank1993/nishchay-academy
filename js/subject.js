@@ -80,12 +80,12 @@ async function loadSubjects() {
     let html = '';
     subjects.forEach((data, index) => {
       const color = colors[index % colors.length];
-      const initials = data.name.substring(0, 2).toUpperCase();
+      const initials = '📚';
 
       html += `
         <div class="exam-body-card card-clickable"
              onclick="window.location.href='topic.html?subjectId=${data.id}&subjectName=${encodeURIComponent(data.name)}&examId=${examId}&examName=${encodeURIComponent(examName)}'">
-          <div class="exam-body-icon" style="background:${color};">
+          <div class="exam-body-icon" style="background:${color}; font-size:24px;">
             ${initials}
           </div>
           <div class="exam-body-info">

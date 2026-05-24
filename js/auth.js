@@ -20,14 +20,29 @@ onAuthStateChanged(auth, async (user) => {
   if (!authBtn) return;
 
   if (user) {
+    // Check if admin
+    const isAdmin = await checkIfAdmin(user.email);
+
     // User is logged in — show avatar
     authBtn.innerHTML = `
-      <img 
-        src="${user.photoURL || 'assets/images/avatar.png'}" 
-        class="header-avatar"
-        onclick="window.location.href='profile.html'"
-        title="${user.displayName}"
-      />
+      <div style="display:flex; align-items:center; gap:8px;">
+        ${isAdmin ? `
+          <a href="/admin/dashboard.html"
+            style="background:rgba(255,255,255,0.2);
+                   color:white; border:1px solid rgba(255,255,255,0.4);
+                   padding:5px 10px; border-radius:6px;
+                   font-size:11px; font-weight:700;
+                   text-decoration:none;">
+            ⚙️ Admin
+          </a>
+        ` : ''}
+        <img
+          src="${user.photoURL || 'assets/images/avatar.png'}"
+          class="header-avatar"
+          onclick="window.location.href='profile.html'"
+          title="${user.displayName}"
+        />
+      </div>
     `;
     // Save user to Firestore if first time
     await saveUserIfNew(user);
@@ -64,6 +79,19 @@ window.logout = async function() {
 };
 
 // Save new user to Firestore
+async function checkIfAdmin(email) {
+  try {
+    const snapshot = await getDocs(collection(db, 'admins'));
+    let isAdmin = false;
+    snapshot.forEach(doc => {
+      if (doc.data().email === email) isAdmin = true;
+    });
+    return isAdmin;
+  } catch(e) {
+    return false;
+  }
+}
+
 async function saveUserIfNew(user) {
   try {
     const userRef = doc(db, 'users', user.uid);

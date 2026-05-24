@@ -63,12 +63,12 @@ async function loadTopics() {
     let html = '';
     topics.forEach((data, index) => {
       const color = colors[index % colors.length];
-      const initials = data.name.substring(0, 2).toUpperCase();
+      const initials = '📖';
 
       html += `
         <div class="exam-body-card card-clickable"
              onclick="window.location.href='topic-detail.html?topicId=${data.id}&topicName=${encodeURIComponent(data.name)}&subjectId=${subjectId}&subjectName=${encodeURIComponent(subjectName)}&examId=${examId}&examName=${encodeURIComponent(examName)}'">
-          <div class="exam-body-icon" style="background:${color};">
+          <div class="exam-body-icon" style="background:${color}; font-size:24px;">
             ${initials}
           </div>
           <div class="exam-body-info">

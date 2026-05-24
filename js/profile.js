@@ -78,7 +78,9 @@ window.saveProfile = async function() {
   const qualification = document.getElementById('editQualification').value;
 
   if (!fullName) { showToast('Enter your full name', 'error'); return; }
-  if (mobile && mobile.length !== 10) { showToast('Enter valid 10-digit mobile', 'error'); return; }
+  if (!mobile || mobile.length !== 10) { showToast('Enter valid 10-digit mobile number', 'error'); return; }
+  if (!district) { showToast('Please select your district', 'error'); return; }
+  if (!qualification) { showToast('Please select your qualification', 'error'); return; }
 
   const btn = document.getElementById('saveProfileBtn');
   btn.disabled = true; btn.textContent = 'Saving...';

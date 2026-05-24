@@ -56,12 +56,12 @@ async function loadExams() {
     // Build HTML
     let html = '';
     exams.forEach(data => {
-      const initials = data.name.substring(0, 3).toUpperCase();
+      const initials = '📝';
 
       html += `
         <div class="exam-body-card card-clickable"
              onclick="window.location.href='subject.html?examId=${data.id}&examName=${encodeURIComponent(data.name)}&bodyName=${encodeURIComponent(bodyName)}'">
-          <div class="exam-body-icon" style="background: linear-gradient(135deg, #0D47A1, #1a237e);">
+          <div class="exam-body-icon" style="background: linear-gradient(135deg, #0D47A1, #1a237e); font-size:24px;">
             ${initials}
           </div>
           <div class="exam-body-info">
