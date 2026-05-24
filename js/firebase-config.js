@@ -28,3 +28,12 @@ const analytics = getAnalytics(app);
 
 // Export so other files can use them
 export { db, auth, analytics };
+
+// ── REGISTER SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered'))
+      .catch(err => console.log('SW error:', err));
+  });
+}
