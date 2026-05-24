@@ -44,7 +44,7 @@ async function loadResult() {
     document.getElementById('resultWrong').textContent =
       attemptData.wrong || 0;
     document.getElementById('resultUnattempted').textContent =
-      attemptData.unattempted || 0;
+      (attempt.unattempted || 0) + (attempt.skipped || 0);
     document.getElementById('resultAccuracy').textContent =
       `${attemptData.accuracy || 0}%`;
 
@@ -85,14 +85,15 @@ async function loadResult() {
     new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Correct', 'Wrong', 'Skipped'],
+        labels: ['Correct', 'Wrong', 'Unattempted', 'Skipped(E)'],
         datasets: [{
           data: [
-            attemptData.correct||0,
-            attemptData.wrong||0,
-            attemptData.unattempted||0
+            attempt.correct||0,
+            attempt.wrong||0,
+            (attempt.unattempted||0),
+            (attempt.skipped||0)
           ],
-          backgroundColor: ['#16A34A', '#DC2626', '#94A3B8'],
+          backgroundColor: ['#16A34A', '#DC2626', '#94A3B8', '#0284C7'],
           borderWidth: 0
         }]
       },

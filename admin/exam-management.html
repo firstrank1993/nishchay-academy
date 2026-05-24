@@ -76,6 +76,9 @@
         <input id="examName" type="text" placeholder="Exam Name (e.g. CCE)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
         <input id="examDesc" type="text" placeholder="Description" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:10px; font-family:Inter,sans-serif;"/>
         <input id="examOrder" type="number" placeholder="Order (1, 2, 3...)" style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
+        <label style="font-size:12px; font-weight:600; color:var(--text-secondary);">Syllabus PDF Link (Google Drive shareable link)</label>
+        <input id="examSyllabusUrl" type="text" placeholder="Paste Google Drive PDF link here (optional)"
+          style="width:100%; padding:10px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:14px; margin-top:6px; margin-bottom:14px; font-family:Inter,sans-serif;"/>
         <div style="display:flex; gap:8px;">
           <button onclick="saveExam()" class="btn btn-primary" style="flex:1;" id="saveExamBtn">Save</button>
           <button onclick="hideExamForm()" class="btn btn-outline" style="flex:1;">Cancel</button>

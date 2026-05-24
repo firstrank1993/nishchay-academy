@@ -200,6 +200,7 @@ window.showAddExamForm = function() {
   document.getElementById('examBodySelect').value = '';
   document.getElementById('examForm').style.display = 'block';
   document.getElementById('examForm').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('examSyllabusUrl').value = '';
 };
 
 window.hideExamForm = function() {
@@ -215,6 +216,7 @@ window.editExam = function(id) {
   document.getElementById('examName').value = exam.name;
   document.getElementById('examDesc').value = exam.description || '';
   document.getElementById('examOrder').value = exam.order || '';
+  document.getElementById('examSyllabusUrl').value = exam.syllabusUrl || '';
   document.getElementById('examBodySelect').value = exam.examBodyId || '';
   document.getElementById('examForm').style.display = 'block';
   document.getElementById('examForm').scrollIntoView({ behavior: 'smooth' });
@@ -225,6 +227,7 @@ window.saveExam = async function() {
   const name = document.getElementById('examName').value.trim();
   const desc = document.getElementById('examDesc').value.trim();
   const order = parseInt(document.getElementById('examOrder').value) || 0;
+  const syllabusUrl = document.getElementById('examSyllabusUrl').value.trim();
 
   if (!examBodyId) { showToast('Please select an exam body', 'error'); return; }
   if (!name) { showToast('Please enter exam name', 'error'); return; }

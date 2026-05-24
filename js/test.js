@@ -15,7 +15,8 @@ let currentUser = null;
 let testData = null;
 let testSections = [];
 let allTestQuestions = [];
-let userAnswers = {};
+let userAnswers = {};       // -1 = unattempted, -2 = skipped (5th option)
+let reviewFlags = new Set(); // question IDs marked for review
 let currentQIndex = 0;
 let timerInterval = null;
 let timeLeft = 0;
@@ -53,14 +54,13 @@ async function loadAllTests() {
         new Date(data.expiresAt.seconds * 1000) > now;
       const isActivated = !data.activateAt ||
         new Date(data.activateAt.seconds * 1000) <= now;
-
       if (isActive && notExpired && isActivated) {
         tests.push({ id: d.id, ...data });
       }
     });
 
     tests.sort((a, b) =>
-      (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)
+      (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)
     );
 
     loader.style.display = 'none';
@@ -72,32 +72,32 @@ async function loadAllTests() {
 
     list.innerHTML = tests.map(t => `
       <div class="card">
-        <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px; cursor:pointer;"
+        <div style="display:flex;align-items:center;gap:12px;
+                    margin-bottom:12px;cursor:pointer;"
              onclick="window.location.href='test.html?testId=${t.id}'">
           <div class="exam-body-icon"
-               style="background:linear-gradient(135deg,#DC2626,#b91c1c);
-                      font-size:20px; flex-shrink:0;">🎯</div>
+            style="background:linear-gradient(135deg,#DC2626,#b91c1c);
+                   font-size:20px;flex-shrink:0;">🎯</div>
           <div style="flex:1;">
-            <h3 style="font-size:15px; font-weight:700;">${t.title}</h3>
-            <p style="font-size:12px; color:var(--text-secondary);">
+            <h3 style="font-size:15px;font-weight:700;">${t.title}</h3>
+            <p style="font-size:12px;color:var(--text-secondary);">
               ${t.duration} min • ${t.totalMarks} marks
             </p>
           </div>
         </div>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex;gap:8px;">
           <button onclick="window.location.href='test.html?testId=${t.id}'"
-                  class="btn btn-primary btn-sm" style="flex:1;">
+            class="btn btn-primary btn-sm" style="flex:1;">
             Attempt Test
           </button>
           <button onclick="shareTest('${t.id}','${encodeURIComponent(t.title)}')"
-                  class="btn btn-sm"
-                  style="background:#E0F2FE;color:#0284C7;border:none;">
+            class="btn btn-sm"
+            style="background:#E0F2FE;color:#0284C7;border:none;">
             📤 Share
           </button>
         </div>
       </div>
     `).join('');
-
     list.style.display = 'flex';
 
   } catch(e) {
@@ -112,14 +112,11 @@ window.shareTest = function(testId, encodedTitle) {
   const testTitle = decodeURIComponent(encodedTitle);
   const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
   const message = `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt this mock test now:\n${url}`;
-
   if (navigator.share) {
     navigator.share({ title: testTitle, text: message, url });
   } else {
     navigator.clipboard.writeText(message).then(() => {
       showToast('Link copied! Share on WhatsApp or Telegram.', 'success');
-    }).catch(() => {
-      showToast('Copy this link: ' + url, 'info');
     });
   }
 };
@@ -138,7 +135,6 @@ async function loadTestIntro(testId) {
 
     testData = { id: testSnap.id, ...testSnap.data() };
 
-    // Load sections
     const sectionsSnap = await getDocs(
       collection(db, 'tests', testId, 'sections')
     );
@@ -148,7 +144,6 @@ async function loadTestIntro(testId) {
     );
     testSections.sort((a, b) => (a.order||0) - (b.order||0));
 
-    // Count total questions
     let totalQ = 0;
     testSections.forEach(s => totalQ += (s.questionIds?.length || 0));
 
@@ -163,9 +158,7 @@ async function loadTestIntro(testId) {
     document.getElementById('introNegative').textContent =
       hasNegative ? 'Yes' : 'No';
 
-  } catch(e) {
-    console.error(e);
-  }
+  } catch(e) { console.error(e); }
 }
 
 // ── START TEST ──
@@ -206,6 +199,7 @@ window.startTest = async function() {
 
     userAnswers = {};
     questionTimings = {};
+    reviewFlags = new Set();
     currentQIndex = 0;
     questionStartTime = new Date();
     testStartTime = new Date();
@@ -246,7 +240,8 @@ function startTimer() {
 function updateTimerDisplay() {
   const mins = Math.floor(timeLeft / 60);
   const secs = timeLeft % 60;
-  const display = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+  const display =
+    `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
   document.getElementById('timerDisplay').textContent = display;
   if (timeLeft <= 300) {
     document.getElementById('timerDisplay').style.background =
@@ -258,23 +253,44 @@ function updateTimerDisplay() {
 function buildQuestionNav() {
   const nav = document.getElementById('questionNav');
   nav.innerHTML = allTestQuestions.map((q, i) => `
-    <button onclick="goToQuestion(${i})" id="navBtn${i}" style="
-      width:34px; height:34px; border-radius:8px;
-      border:1.5px solid var(--border);
-      background:white; font-size:12px; font-weight:600;
-      cursor:pointer; font-family:Inter,sans-serif;
-    ">${i+1}</button>
+    <button onclick="goToQuestion(${i})" id="navBtn${i}"
+      style="width:34px;height:34px;border-radius:8px;
+             border:1.5px solid var(--border);
+             background:white;font-size:11px;font-weight:600;
+             cursor:pointer;font-family:Inter,sans-serif;">
+      ${i+1}
+    </button>
   `).join('');
 }
 
 function updateNavButton(index) {
   const btn = document.getElementById(`navBtn${index}`);
   if (!btn) return;
-  const isAnswered =
-    userAnswers[allTestQuestions[index].id] !== undefined;
-  btn.style.background = isAnswered ? 'var(--success)' : 'white';
-  btn.style.color = isAnswered ? 'white' : 'var(--text-primary)';
-  btn.style.borderColor = isAnswered ? 'var(--success)' : 'var(--border)';
+  const q = allTestQuestions[index];
+  const answer = userAnswers[q.id];
+  const isReview = reviewFlags.has(q.id);
+
+  if (isReview) {
+    // Mark for review — yellow
+    btn.style.background = '#FEF3C7';
+    btn.style.borderColor = '#F59E0B';
+    btn.style.color = '#D97706';
+  } else if (answer === -2) {
+    // Skipped (5th option) — blue
+    btn.style.background = '#E0F2FE';
+    btn.style.borderColor = '#0284C7';
+    btn.style.color = '#0284C7';
+  } else if (answer !== undefined) {
+    // Answered — green
+    btn.style.background = 'var(--success)';
+    btn.style.borderColor = 'var(--success)';
+    btn.style.color = 'white';
+  } else {
+    // Not visited — white
+    btn.style.background = 'white';
+    btn.style.borderColor = 'var(--border)';
+    btn.style.color = 'var(--text-primary)';
+  }
 }
 
 window.goToQuestion = function(index) {
@@ -284,14 +300,29 @@ window.goToQuestion = function(index) {
   showTestQuestion();
 };
 
-// ── RECORD TIME ──
 function recordQuestionTime() {
   if (questionStartTime && allTestQuestions[currentQIndex]) {
     const qId = allTestQuestions[currentQIndex].id;
-    const timeSpent = Math.round((new Date() - questionStartTime) / 1000);
+    const timeSpent =
+      Math.round((new Date() - questionStartTime) / 1000);
     questionTimings[qId] = (questionTimings[qId] || 0) + timeSpent;
   }
 }
+
+// ── TOGGLE REVIEW FLAG ──
+window.toggleReview = function() {
+  const q = allTestQuestions[currentQIndex];
+  if (reviewFlags.has(q.id)) {
+    reviewFlags.delete(q.id);
+    document.getElementById('reviewBtn').style.opacity = '0.4';
+    showToast('Review flag removed', 'info');
+  } else {
+    reviewFlags.add(q.id);
+    document.getElementById('reviewBtn').style.opacity = '1';
+    showToast('Marked for review 🔖', 'info');
+  }
+  updateNavButton(currentQIndex);
+};
 
 // ── SHOW QUESTION ──
 function showTestQuestion() {
@@ -306,7 +337,11 @@ function showTestQuestion() {
   document.getElementById('testProgressBar').style.width =
     `${((currentQIndex+1)/total)*100}%`;
 
-  // Highlight current nav button
+  // Update review button
+  const reviewBtn = document.getElementById('reviewBtn');
+  reviewBtn.style.opacity = reviewFlags.has(q.id) ? '1' : '0.4';
+
+  // Highlight current nav
   allTestQuestions.forEach((_, i) => {
     const btn = document.getElementById(`navBtn${i}`);
     if (btn) btn.style.outline =
@@ -324,29 +359,34 @@ function showTestQuestion() {
 
   document.getElementById('testQuestionText').textContent = q.questionText;
 
-  const optLabels = ['A','B','C','D'];
+  const optLabels = ['A','B','C','D','E'];
+  const optColors = ['var(--primary)','var(--primary)',
+    'var(--primary)','var(--primary)','#64748B'];
   const container = document.getElementById('testOptionsContainer');
   container.innerHTML = '';
 
   const selectedAnswer = userAnswers[q.id];
 
+  // Regular options A B C D
   q.options.forEach((opt, i) => {
-    const btn = document.createElement('button');
     const isSelected = selectedAnswer === i;
+    const btn = document.createElement('button');
     btn.style.cssText = `
       width:100%; padding:12px 14px; border-radius:10px;
-      border:${isSelected ? '2px solid var(--primary)' : '1.5px solid var(--border)'};
+      border:${isSelected
+        ? '2px solid var(--primary)'
+        : '1.5px solid var(--border)'};
       background:${isSelected ? 'var(--primary-light)' : 'white'};
       font-size:14px; text-align:left; cursor:pointer;
       font-family:Inter,sans-serif; transition:all 0.2s;
       display:flex; align-items:center; gap:10px;
     `;
     btn.innerHTML = `
-      <span style="width:28px; height:28px; border-radius:50%;
+      <span style="width:28px;height:28px;border-radius:50%;
         background:${isSelected ? 'var(--primary)' : 'var(--primary-light)'};
         color:${isSelected ? 'white' : 'var(--primary)'};
-        font-weight:700; font-size:13px;
-        display:flex; align-items:center; justify-content:center;
+        font-weight:700;font-size:13px;
+        display:flex;align-items:center;justify-content:center;
         flex-shrink:0;">${optLabels[i]}</span>
       <span>${opt}</span>
     `;
@@ -357,6 +397,40 @@ function showTestQuestion() {
     };
     container.appendChild(btn);
   });
+
+  // 5th option — Skip (no negative marking)
+  const isSkipped = selectedAnswer === -2;
+  const skipBtn = document.createElement('button');
+  skipBtn.style.cssText = `
+    width:100%; padding:12px 14px; border-radius:10px;
+    border:${isSkipped
+      ? '2px solid #64748B'
+      : '1.5px solid var(--border)'};
+    background:${isSkipped ? '#F1F5F9' : 'white'};
+    font-size:14px; text-align:left; cursor:pointer;
+    font-family:Inter,sans-serif; transition:all 0.2s;
+    display:flex; align-items:center; gap:10px;
+  `;
+  skipBtn.innerHTML = `
+    <span style="width:28px;height:28px;border-radius:50%;
+      background:${isSkipped ? '#64748B' : '#F1F5F9'};
+      color:${isSkipped ? 'white' : '#64748B'};
+      font-weight:700;font-size:13px;
+      display:flex;align-items:center;justify-content:center;
+      flex-shrink:0;">E</span>
+    <span style="color:#64748B;">I don't want to attempt this question
+      <span style="font-size:11px;background:#DCFCE7;color:var(--success);
+             padding:2px 6px;border-radius:4px;margin-left:6px;">
+        No negative marks
+      </span>
+    </span>
+  `;
+  skipBtn.onclick = () => {
+    userAnswers[q.id] = -2;
+    updateNavButton(currentQIndex);
+    showTestQuestion();
+  };
+  container.appendChild(skipBtn);
 
   document.getElementById('prevBtn').disabled = currentQIndex === 0;
   document.getElementById('nextTestBtn').textContent =
@@ -386,9 +460,10 @@ window.confirmSubmit = function() {
   const answered = Object.keys(userAnswers).length;
   const total = allTestQuestions.length;
   const unanswered = total - answered;
+
   if (unanswered > 0) {
     if (!confirm(
-      `You have ${unanswered} unanswered question(s). Submit anyway?`
+      `You have ${unanswered} completely unanswered question(s).\n⚠️ Negative marks will apply to these.\n\nSubmit anyway?`
     )) return;
   } else {
     if (!confirm('Submit test?')) return;
@@ -404,37 +479,64 @@ async function submitTest() {
   let totalScore = 0;
   let correct = 0;
   let wrong = 0;
+  let skipped = 0; // 5th option selected
+  let unattempted = 0; // completely blank
   const answers = {};
 
   allTestQuestions.forEach(q => {
     const selected = userAnswers[q.id];
-    const isCorrect = selected === q.correctOption;
-    const isAnswered = selected !== undefined;
 
-    if (isAnswered && isCorrect) {
-      totalScore += q.marksPerQ;
-      correct++;
-    } else if (isAnswered && !isCorrect) {
+    if (selected === undefined) {
+      // Completely unattempted — negative applies
+      unattempted++;
       totalScore -= q.negativeMarks || 0;
+      answers[q.id] = {
+        selectedOption: -1,
+        isCorrect: false,
+        marksAwarded: -(q.negativeMarks||0),
+        timeTaken: questionTimings[q.id] || 0,
+        status: 'unattempted'
+      };
+    } else if (selected === -2) {
+      // Skipped via 5th option — no negative
+      skipped++;
+      answers[q.id] = {
+        selectedOption: -2,
+        isCorrect: false,
+        marksAwarded: 0,
+        timeTaken: questionTimings[q.id] || 0,
+        status: 'skipped'
+      };
+    } else if (selected === q.correctOption) {
+      // Correct answer
+      correct++;
+      totalScore += q.marksPerQ;
+      answers[q.id] = {
+        selectedOption: selected,
+        isCorrect: true,
+        marksAwarded: q.marksPerQ,
+        timeTaken: questionTimings[q.id] || 0,
+        status: 'correct'
+      };
+    } else {
+      // Wrong answer — negative applies
       wrong++;
+      totalScore -= q.negativeMarks || 0;
+      answers[q.id] = {
+        selectedOption: selected,
+        isCorrect: false,
+        marksAwarded: -(q.negativeMarks||0),
+        timeTaken: questionTimings[q.id] || 0,
+        status: 'wrong'
+      };
     }
-
-    answers[q.id] = {
-      selectedOption: selected ?? -1,
-      isCorrect: isAnswered ? isCorrect : false,
-      marksAwarded: isAnswered
-        ? (isCorrect ? q.marksPerQ : -(q.negativeMarks||0))
-        : 0,
-      timeTaken: questionTimings[q.id] || 0
-    };
   });
 
   const totalTimeTaken = Math.round(
     (new Date() - testStartTime) / 1000
   );
-
-  const accuracy = allTestQuestions.length > 0
-    ? Math.round((correct / allTestQuestions.length) * 100) : 0;
+  const accuracy = (correct + wrong) > 0
+    ? Math.round((correct / (correct + wrong)) * 100) : 0;
 
   try {
     const attemptData = {
@@ -448,7 +550,8 @@ async function submitTest() {
       totalQuestions: allTestQuestions.length,
       correct,
       wrong,
-      unattempted: allTestQuestions.length - correct - wrong,
+      skipped,
+      unattempted,
       accuracy,
       totalTimeTaken,
       answers

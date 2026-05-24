@@ -32,13 +32,16 @@ onAuthStateChanged(auth, async (user) => {
             style="background:rgba(255,255,255,0.2);
                    color:white;
                    border:1px solid rgba(255,255,255,0.4);
-                   padding:5px 10px;
+                   padding:6px 10px;
                    border-radius:6px;
-                   font-size:11px;
+                   font-size:12px;
                    font-weight:700;
                    text-decoration:none;
-                   white-space:nowrap;">
-            ⚙️ Admin
+                   white-space:nowrap;
+                   display:inline-flex;
+                   align-items:center;
+                   gap:4px;">
+            ⚙️ <span>Admin</span>
           </a>
         ` : ''}
         <img
