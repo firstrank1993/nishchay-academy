@@ -22,27 +22,48 @@
   <main class="page-container">
 
     <!-- FILTER BAR -->
-    <div style="display:flex;gap:8px;margin:12px 0 16px;flex-wrap:wrap;">
-      <select id="filterSubject" onchange="filterQuestions()"
-        style="flex:1;min-width:120px;padding:9px 12px;
-               border:1.5px solid var(--border);
-               border-radius:var(--radius-sm);font-size:13px;
-               font-family:Inter,sans-serif;">
-        <option value="">All Subjects</option>
-      </select>
-      <select id="filterType" onchange="filterQuestions()"
-        style="flex:1;min-width:100px;padding:9px 12px;
-               border:1.5px solid var(--border);
-               border-radius:var(--radius-sm);font-size:13px;
-               font-family:Inter,sans-serif;">
-        <option value="">All Types</option>
-        <option value="PYQ">PYQ</option>
-        <option value="IMP">IMP</option>
-      </select>
+    <div style="margin:12px 0 16px;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <select id="filterSubject" onchange="onSubjectFilterChange()"
+          style="flex:1;min-width:140px;padding:9px 12px;
+                 border:1.5px solid var(--border);
+                 border-radius:var(--radius-sm);font-size:13px;
+                 font-family:Inter,sans-serif;background:white;">
+          <option value="">All Subjects</option>
+        </select>
+        <select id="filterTopic" onchange="filterQuestions()"
+          style="flex:1;min-width:140px;padding:9px 12px;
+                 border:1.5px solid var(--border);
+                 border-radius:var(--radius-sm);font-size:13px;
+                 font-family:Inter,sans-serif;background:white;">
+          <option value="">All Topics</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <select id="filterType" onchange="filterQuestions()"
+          style="flex:1;padding:9px 12px;
+                 border:1.5px solid var(--border);
+                 border-radius:var(--radius-sm);font-size:13px;
+                 font-family:Inter,sans-serif;background:white;">
+          <option value="">PYQ + IMP</option>
+          <option value="PYQ">PYQ Only</option>
+          <option value="IMP">IMP Only</option>
+        </select>
+        <select id="filterDifficulty" onchange="filterQuestions()"
+          style="flex:1;padding:9px 12px;
+                 border:1.5px solid var(--border);
+                 border-radius:var(--radius-sm);font-size:13px;
+                 font-family:Inter,sans-serif;background:white;">
+          <option value="">All Difficulty</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </div>
     </div>
 
     <!-- ADD & SELECT BUTTONS -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
       <button onclick="showAddForm()"
         class="btn btn-primary" style="flex:1;">
         + Add Question
@@ -53,20 +74,38 @@
       </button>
     </div>
 
+    <!-- BULK UPLOAD BUTTON -->
+    <button onclick="showBulkUpload()"
+      class="btn btn-outline btn-full" style="margin-bottom:16px;">
+      📊 Bulk Upload via Excel
+    </button>
+
     <!-- BULK DELETE BAR -->
     <div id="bulkDeleteBar"
       style="display:none;padding:12px 16px;
              background:#FEE2E2;border-radius:var(--radius-sm);
              margin-bottom:16px;align-items:center;
-             justify-content:space-between;">
+             justify-content:space-between;flex-wrap:wrap;gap:8px;">
       <span style="font-size:13px;font-weight:600;color:#DC2626;"
         id="selectedCountText">0 selected</span>
-      <div style="display:flex;gap:8px;">
-        <button onclick="selectAllQuestions()"
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="selectAllVisible()"
           class="btn btn-sm"
           style="background:white;color:var(--primary);
                  border:1px solid var(--primary);">
-          Select All
+          Select All Visible
+        </button>
+        <button onclick="selectAllFiltered()"
+          class="btn btn-sm"
+          style="background:#FEF3C7;color:#D97706;
+                 border:1px solid #FDE68A;">
+          Select All Filtered
+        </button>
+        <button onclick="clearSelection()"
+          class="btn btn-sm"
+          style="background:white;color:var(--text-secondary);
+                 border:1px solid var(--border);">
+          Clear
         </button>
         <button onclick="deleteSelectedQuestions()"
           class="btn btn-sm"
@@ -76,16 +115,9 @@
       </div>
     </div>
 
-    <!-- BULK UPLOAD BUTTON -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;">
-      <button onclick="showBulkUpload()"
-        class="btn btn-outline btn-full">
-        📊 Bulk Upload via Excel
-      </button>
-    </div>
-
     <!-- BULK UPLOAD SECTION -->
-    <div id="bulkUploadSection" style="display:none;" class="card">
+    <div id="bulkUploadSection" style="display:none;" class="card"
+      style="margin-bottom:16px;">
       <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">
         Bulk Upload via Excel
       </h3>
@@ -104,7 +136,8 @@
         📂 Choose Excel File
       </button>
       <div id="uploadStatus"
-        style="display:none;padding:12px;border-radius:var(--radius-sm);
+        style="display:none;padding:12px;
+               border-radius:var(--radius-sm);
                font-size:13px;margin-bottom:10px;"></div>
       <button onclick="hideBulkUpload()"
         class="btn btn-outline btn-full">Cancel</button>
@@ -115,7 +148,6 @@
       <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;"
         id="formTitle">Add Question</h3>
 
-      <!-- Type -->
       <label style="font-size:12px;font-weight:600;
                     color:var(--text-secondary);">
         Question Type
@@ -132,7 +164,6 @@
         </button>
       </div>
 
-      <!-- PYQ Info -->
       <div id="pyqInfo">
         <input id="pyqExamName" type="text"
           placeholder="Exam name (e.g. Talati)"
@@ -145,7 +176,6 @@
           style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-bottom:10px;font-family:Inter,sans-serif;"/>
       </div>
 
-      <!-- Subject & Topic -->
       <select id="qSubjectSelect" onchange="loadTopicsForSubject()"
         style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-bottom:10px;font-family:Inter,sans-serif;">
         <option value="">Select Subject</option>
@@ -155,18 +185,16 @@
         <option value="">Select Topic</option>
       </select>
 
-      <!-- Question Text -->
       <textarea id="questionText"
         placeholder="Question text..." rows="3"
         style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-bottom:10px;font-family:Inter,sans-serif;resize:vertical;"></textarea>
 
-      <!-- Options -->
       <label style="font-size:12px;font-weight:600;
                     color:var(--text-secondary);">
-        Options (click correct answer button)
+        Options (click letter to mark as correct)
       </label>
-      <div style="margin:8px 0 10px;display:flex;
-                  flex-direction:column;gap:8px;">
+      <div style="margin:8px 0 10px;
+                  display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:8px;align-items:center;">
           <button id="opt0btn" onclick="setCorrect(0)"
             class="btn btn-sm"
@@ -198,7 +226,6 @@
         </div>
       </div>
 
-      <!-- Difficulty -->
       <select id="difficulty"
         style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-bottom:10px;font-family:Inter,sans-serif;">
         <option value="easy">Easy</option>
@@ -206,16 +233,17 @@
         <option value="hard">Hard</option>
       </select>
 
-      <!-- Explanation -->
       <textarea id="explanation"
         placeholder="Explanation (optional)..." rows="2"
         style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-bottom:14px;font-family:Inter,sans-serif;resize:vertical;"></textarea>
 
       <div style="display:flex;gap:8px;">
-        <button onclick="saveQuestion()" class="btn btn-primary"
-          style="flex:1;" id="saveQBtn">Save</button>
-        <button onclick="hideForm()" class="btn btn-outline"
-          style="flex:1;">Cancel</button>
+        <button onclick="saveQuestion()"
+          class="btn btn-primary" style="flex:1;" id="saveQBtn">
+          Save
+        </button>
+        <button onclick="hideForm()"
+          class="btn btn-outline" style="flex:1;">Cancel</button>
       </div>
     </div>
 
@@ -230,7 +258,8 @@
       <div class="skeleton skeleton-card"></div>
       <div class="skeleton skeleton-card"></div>
     </div>
-    <div id="questionsList" class="card-list" style="display:none;"></div>
+    <div id="questionsList" class="card-list"
+      style="display:none;"></div>
 
   </main>
 

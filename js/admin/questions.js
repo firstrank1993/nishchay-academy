@@ -32,11 +32,14 @@ async function loadSubjects() {
   const snap = await getDocs(collection(db, 'subjects'));
   subjectsCache = [];
   snap.forEach(d => subjectsCache.push({ id: d.id, ...d.data() }));
+  subjectsCache.sort((a, b) => (a.order||0) - (b.order||0));
 
   const sel = document.getElementById('qSubjectSelect');
   const filterSel = document.getElementById('filterSubject');
+
   subjectsCache.forEach(s => {
-    sel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    sel.innerHTML +=
+      `<option value="${s.id}">${s.name}</option>`;
     filterSel.innerHTML +=
       `<option value="${s.id}">${s.name}</option>`;
   });
@@ -46,6 +49,7 @@ async function loadAllTopics() {
   const snap = await getDocs(collection(db, 'topics'));
   topicsCache = [];
   snap.forEach(d => topicsCache.push({ id: d.id, ...d.data() }));
+  topicsCache.sort((a, b) => (a.order||0) - (b.order||0));
 }
 
 async function loadQuestions() {
@@ -55,7 +59,9 @@ async function loadQuestions() {
   try {
     const snap = await getDocs(collection(db, 'questions'));
     questionsCache = [];
-    snap.forEach(d => questionsCache.push({ id: d.id, ...d.data() }));
+    snap.forEach(d =>
+      questionsCache.push({ id: d.id, ...d.data() })
+    );
     filteredQuestions = [...questionsCache];
 
     loader.style.display = 'none';
@@ -66,6 +72,61 @@ async function loadQuestions() {
   }
 }
 
+// ── FILTER ──
+window.onSubjectFilterChange = function() {
+  const subjectId =
+    document.getElementById('filterSubject').value;
+  const topicSelect = document.getElementById('filterTopic');
+
+  topicSelect.innerHTML = '<option value="">All Topics</option>';
+  if (subjectId) {
+    topicsCache
+      .filter(t => t.subjectId === subjectId)
+      .forEach(t => {
+        topicSelect.innerHTML +=
+          `<option value="${t.id}">${t.name}</option>`;
+      });
+  }
+  filterQuestions();
+};
+
+window.filterQuestions = function() {
+  const subjectFilter =
+    document.getElementById('filterSubject').value;
+  const topicFilter =
+    document.getElementById('filterTopic').value;
+  const typeFilter =
+    document.getElementById('filterType').value;
+  const diffFilter =
+    document.getElementById('filterDifficulty').value;
+
+  filteredQuestions = questionsCache.filter(q => {
+    const matchSubject =
+      !subjectFilter || q.subjectId === subjectFilter;
+    const matchTopic =
+      !topicFilter || q.topicId === topicFilter;
+    const matchType =
+      !typeFilter || q.type === typeFilter;
+    const matchDiff =
+      !diffFilter || q.difficulty === diffFilter;
+    return matchSubject && matchTopic && matchType && matchDiff;
+  });
+
+  // Clear selection when filter changes
+  if (bulkModeActive) {
+    selectedQuestionIds.clear();
+    updateSelectedCount();
+  }
+
+  renderQuestions(filteredQuestions);
+};
+
+function updateSelectedCount() {
+  const el = document.getElementById('selectedCountText');
+  if (el) el.textContent = `${selectedQuestionIds.size} selected`;
+}
+
+// ── RENDER ──
 function renderQuestions(questions) {
   const list = document.getElementById('questionsList');
   const count = document.getElementById('questionsCount');
@@ -80,11 +141,19 @@ function renderQuestions(questions) {
   }
 
   list.innerHTML = questions.map(q => {
-    const subject = subjectsCache.find(s => s.id === q.subjectId);
-    const topic = topicsCache.find(t => t.id === q.topicId);
+    const subject =
+      subjectsCache.find(s => s.id === q.subjectId);
+    const topic =
+      topicsCache.find(t => t.id === q.topicId);
     const typeBadge = q.type === 'PYQ'
       ? `<span class="badge badge-warning">PYQ ${q.pyqYear||''}</span>`
       : `<span class="badge badge-success">IMP</span>`;
+
+    const diffBadge = q.difficulty === 'easy'
+      ? `<span class="badge badge-success" style="font-size:10px;">Easy</span>`
+      : q.difficulty === 'hard'
+      ? `<span class="badge badge-danger" style="font-size:10px;">Hard</span>`
+      : `<span class="badge badge-warning" style="font-size:10px;">Medium</span>`;
 
     const checkbox = bulkModeActive ? `
       <input type="checkbox" class="question-select-cb"
@@ -96,36 +165,44 @@ function renderQuestions(questions) {
     ` : '';
 
     return `
-      <div class="card" style="gap:8px;">
+      <div class="card">
         <div style="display:flex;align-items:flex-start;gap:10px;">
           ${checkbox}
           <div style="flex:1;">
             <div style="display:flex;justify-content:space-between;
-                        align-items:flex-start;gap:8px;margin-bottom:6px;">
+                        align-items:flex-start;gap:8px;
+                        margin-bottom:6px;flex-wrap:wrap;">
               <p style="font-size:14px;font-weight:600;flex:1;
-                         line-height:1.5;">${q.questionText}</p>
-              ${typeBadge}
+                         line-height:1.5;min-width:200px;">
+                ${q.questionText}
+              </p>
+              <div style="display:flex;gap:4px;flex-wrap:wrap;
+                          flex-shrink:0;">
+                ${typeBadge}
+                ${diffBadge}
+              </div>
             </div>
             <div style="font-size:12px;color:var(--text-secondary);
                         margin-bottom:8px;">
-              ${subject ? subject.name : ''}
-              ${topic ? '→ '+topic.name : ''}
+              📚 ${subject ? subject.name : 'No subject'}
+              ${topic ? ' → 📖 '+topic.name : ''}
               ${q.type === 'PYQ' && q.pyqExamName
-                ? '• '+q.pyqExamName : ''}
+                ? ' • '+q.pyqExamName+' '+q.pyqYear : ''}
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;
                         gap:4px;margin-bottom:8px;">
               ${q.options ? q.options.map((opt, i) => `
                 <div style="font-size:12px;padding:5px 8px;
                             border-radius:6px;
-                            background:${i === q.correctOption
-                              ? '#DCFCE7' : '#F8FAFC'};
-                            color:${i === q.correctOption
-                              ? 'var(--success)'
-                              : 'var(--text-secondary)'};
-                            border:1px solid ${i === q.correctOption
-                              ? '#BBF7D0' : 'var(--border)'};">
+                  background:${i === q.correctOption
+                    ? '#DCFCE7' : '#F8FAFC'};
+                  color:${i === q.correctOption
+                    ? 'var(--success)'
+                    : 'var(--text-secondary)'};
+                  border:1px solid ${i === q.correctOption
+                    ? '#BBF7D0' : 'var(--border)'};">
                   ${['A','B','C','D'][i]}. ${opt}
+                  ${i === q.correctOption ? ' ✓' : ''}
                 </div>
               `).join('') : ''}
             </div>
@@ -135,9 +212,8 @@ function renderQuestions(questions) {
                   class="btn btn-sm btn-outline">Edit</button>
                 <button onclick="deleteQuestion('${q.id}')"
                   class="btn btn-sm"
-                  style="background:#FEE2E2;color:#DC2626;border:none;">
-                  Delete
-                </button>
+                  style="background:#FEE2E2;color:#DC2626;
+                         border:none;">Delete</button>
               </div>
             ` : ''}
           </div>
@@ -156,9 +232,10 @@ window.toggleBulkMode = function() {
   const btn = document.getElementById('bulkModeBtn');
   const bar = document.getElementById('bulkDeleteBar');
 
-  btn.textContent = bulkModeActive ? '✕ Cancel' : '☑ Select';
+  btn.textContent = bulkModeActive ? '✕ Cancel Select' : '☑ Select';
   btn.style.background = bulkModeActive ? '#FEE2E2' : 'transparent';
-  btn.style.color = bulkModeActive ? '#DC2626' : 'var(--primary)';
+  btn.style.color =
+    bulkModeActive ? '#DC2626' : 'var(--primary)';
   bar.style.display = bulkModeActive ? 'flex' : 'none';
 
   renderQuestions(filteredQuestions);
@@ -170,17 +247,40 @@ window.toggleQuestionSelect = function(id, checkbox) {
   } else {
     selectedQuestionIds.delete(id);
   }
-  document.getElementById('selectedCountText').textContent =
-    `${selectedQuestionIds.size} selected`;
+  updateSelectedCount();
 };
 
-window.selectAllQuestions = function() {
-  filteredQuestions.forEach(q => selectedQuestionIds.add(q.id));
+// Select all currently visible on screen
+window.selectAllVisible = function() {
+  filteredQuestions.forEach(q =>
+    selectedQuestionIds.add(q.id)
+  );
   document.querySelectorAll('.question-select-cb').forEach(cb => {
     cb.checked = true;
   });
-  document.getElementById('selectedCountText').textContent =
-    `${selectedQuestionIds.size} selected`;
+  updateSelectedCount();
+};
+
+// Select ALL filtered questions (even if not visible due to scroll)
+window.selectAllFiltered = function() {
+  filteredQuestions.forEach(q =>
+    selectedQuestionIds.add(q.id)
+  );
+  document.querySelectorAll('.question-select-cb').forEach(cb => {
+    cb.checked = true;
+  });
+  updateSelectedCount();
+  showToast(
+    `${selectedQuestionIds.size} questions selected`, 'info'
+  );
+};
+
+window.clearSelection = function() {
+  selectedQuestionIds.clear();
+  document.querySelectorAll('.question-select-cb').forEach(cb => {
+    cb.checked = false;
+  });
+  updateSelectedCount();
 };
 
 window.deleteSelectedQuestions = async function() {
@@ -189,58 +289,51 @@ window.deleteSelectedQuestions = async function() {
     return;
   }
   if (!confirm(
-    `Delete ${selectedQuestionIds.size} questions permanently? This cannot be undone.`
+    `⚠️ Delete ${selectedQuestionIds.size} questions permanently?\n\nThis cannot be undone.`
   )) return;
 
-  const btn = document.querySelector(
+  const deleteBtn = document.querySelector(
     '#bulkDeleteBar button:last-child'
   );
-  btn.disabled = true;
-  btn.textContent = 'Deleting...';
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'Deleting...';
+  }
 
+  let deleted = 0;
   try {
     for (const id of selectedQuestionIds) {
       await deleteDoc(doc(db, 'questions', id));
+      deleted++;
     }
-    showToast(
-      `${selectedQuestionIds.size} questions deleted!`, 'success'
-    );
+    showToast(`✅ ${deleted} questions deleted!`, 'success');
     selectedQuestionIds.clear();
     bulkModeActive = false;
-    document.getElementById('bulkModeBtn').textContent = '☑ Select';
-    document.getElementById('bulkModeBtn').style.background =
-      'transparent';
-    document.getElementById('bulkModeBtn').style.color =
-      'var(--primary)';
-    document.getElementById('bulkDeleteBar').style.display = 'none';
+
+    const btn = document.getElementById('bulkModeBtn');
+    const bar = document.getElementById('bulkDeleteBar');
+    if (btn) {
+      btn.textContent = '☑ Select';
+      btn.style.background = 'transparent';
+      btn.style.color = 'var(--primary)';
+    }
+    if (bar) bar.style.display = 'none';
+
     await loadQuestions();
+    filterQuestions();
+
   } catch(e) {
     showToast('Error deleting questions', 'error');
     console.error(e);
   }
 
-  btn.disabled = false;
-  btn.textContent = '🗑 Delete Selected';
+  if (deleteBtn) {
+    deleteBtn.disabled = false;
+    deleteBtn.textContent = '🗑 Delete Selected';
+  }
 };
 
-// ── FILTER ──
-window.filterQuestions = function() {
-  const subjectFilter =
-    document.getElementById('filterSubject').value;
-  const typeFilter =
-    document.getElementById('filterType').value;
-
-  filteredQuestions = questionsCache.filter(q => {
-    const matchSubject =
-      !subjectFilter || q.subjectId === subjectFilter;
-    const matchType = !typeFilter || q.type === typeFilter;
-    return matchSubject && matchType;
-  });
-
-  renderQuestions(filteredQuestions);
-};
-
-// ── FORM ──
+// ── ADD/EDIT FORM ──
 window.showAddForm = function() {
   editingQId = null;
   document.getElementById('formTitle').textContent = 'Add Question';
@@ -254,7 +347,8 @@ window.showAddForm = function() {
   document.getElementById('pyqYear').value = '';
   document.getElementById('pyqExamBodyName').value = '';
   document.getElementById('qSubjectSelect').value = '';
-  document.getElementById('qTopicSelect').value = '';
+  document.getElementById('qTopicSelect').innerHTML =
+    '<option value="">Select Topic</option>';
   document.getElementById('difficulty').value = 'medium';
   setCorrect(0);
   selectType('PYQ');
@@ -320,20 +414,23 @@ window.editQuestion = function(id) {
   document.getElementById('opt1').value = q.options[1] || '';
   document.getElementById('opt2').value = q.options[2] || '';
   document.getElementById('opt3').value = q.options[3] || '';
-  document.getElementById('explanation').value = q.explanation || '';
+  document.getElementById('explanation').value =
+    q.explanation || '';
   document.getElementById('difficulty').value =
     q.difficulty || 'medium';
   document.getElementById('qSubjectSelect').value =
     q.subjectId || '';
   loadTopicsForSubject();
-  document.getElementById('qTopicSelect').value = q.topicId || '';
+  document.getElementById('qTopicSelect').value =
+    q.topicId || '';
   selectType(q.type || 'PYQ');
   setCorrect(q.correctOption || 0);
 
   if (q.type === 'PYQ') {
     document.getElementById('pyqExamName').value =
       q.pyqExamName || '';
-    document.getElementById('pyqYear').value = q.pyqYear || '';
+    document.getElementById('pyqYear').value =
+      q.pyqYear || '';
     document.getElementById('pyqExamBodyName').value =
       q.pyqExamBodyName || '';
   }
@@ -359,7 +456,8 @@ window.saveQuestion = async function() {
   ];
   const explanation =
     document.getElementById('explanation').value.trim();
-  const difficulty = document.getElementById('difficulty').value;
+  const difficulty =
+    document.getElementById('difficulty').value;
 
   if (!questionText) {
     showToast('Enter question text', 'error'); return;
@@ -405,6 +503,7 @@ window.saveQuestion = async function() {
     }
     hideForm();
     await loadQuestions();
+    filterQuestions();
   } catch(e) {
     showToast('Error saving', 'error');
     console.error(e);
@@ -419,19 +518,22 @@ window.deleteQuestion = async function(id) {
     await deleteDoc(doc(db, 'questions', id));
     showToast('Deleted!', 'success');
     await loadQuestions();
+    filterQuestions();
   } catch(e) { showToast('Error deleting', 'error'); }
 };
 
 // ── BULK UPLOAD ──
 window.showBulkUpload = function() {
-  document.getElementById('bulkUploadSection').style.display = 'block';
+  document.getElementById('bulkUploadSection').style.display =
+    'block';
   document.getElementById('bulkUploadSection').scrollIntoView({
     behavior: 'smooth'
   });
 };
 
 window.hideBulkUpload = function() {
-  document.getElementById('bulkUploadSection').style.display = 'none';
+  document.getElementById('bulkUploadSection').style.display =
+    'none';
 };
 
 window.downloadTemplate = function() {
@@ -566,23 +668,22 @@ window.handleExcelUpload = async function(event) {
 
     status.style.background = '#DCFCE7';
     status.style.color = 'var(--success)';
-    status.textContent =
-      `✅ Done! ${success} uploaded successfully. ${failed > 0 ? failed+' failed (check subject/topic names).' : ''}`;
+    status.textContent = `✅ Done! ${success} uploaded. ${failed > 0 ? failed+' failed.' : ''}`;
 
     await loadQuestions();
+    filterQuestions();
 
   } catch(e) {
     status.style.background = '#FEE2E2';
     status.style.color = '#DC2626';
-    status.textContent =
-      'Error reading file. Make sure it is a valid Excel file.';
+    status.textContent = 'Error reading file.';
     console.error(e);
   }
 
   event.target.value = '';
 };
 
-// Toast
+// ── TOAST ──
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
