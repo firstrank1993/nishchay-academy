@@ -21,7 +21,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadResult() {
   try {
-    const attemptSnap = await getDoc(doc(db, 'testAttempts', attemptId));
+    const attemptSnap = await getDoc(
+      doc(db, 'testAttempts', attemptId)
+    );
     if (!attemptSnap.exists()) {
       window.location.href = 'my-results.html';
       return;
@@ -32,7 +34,7 @@ async function loadResult() {
     document.getElementById('resultLoader').style.display = 'none';
     document.getElementById('resultContent').style.display = 'block';
 
-    // Fill stats
+    // Fill basic stats
     document.getElementById('resultTestTitle').textContent =
       attemptData.testTitle || 'Test Result';
     document.getElementById('resultScore').textContent =
@@ -43,25 +45,78 @@ async function loadResult() {
       attemptData.correct || 0;
     document.getElementById('resultWrong').textContent =
       attemptData.wrong || 0;
+
+    // Skipped = 5th option selected (no negative)
+    // Unattempted = completely blank (negative applied)
+    const skipped = attemptData.skipped || 0;
+    const unattempted = attemptData.unattempted || 0;
     document.getElementById('resultUnattempted').textContent =
-      (attempt.unattempted || 0) + (attempt.skipped || 0);
+      skipped + unattempted;
+
     document.getElementById('resultAccuracy').textContent =
       `${attemptData.accuracy || 0}%`;
 
-    // Show total time
+    // Show total time taken
     if (attemptData.totalTimeTaken) {
       const mins = Math.floor(attemptData.totalTimeTaken / 60);
       const secs = attemptData.totalTimeTaken % 60;
       const timeStr = mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
       const statsGrid = document.getElementById('statsGrid');
-      const timeCard = document.createElement('div');
-      timeCard.className = 'card';
-      timeCard.style.cssText = 'text-align:center; grid-column:span 2;';
-      timeCard.innerHTML = `
-        <div style="font-size:22px;font-weight:800;color:#7C3AED;">⏱ ${timeStr}</div>
-        <div style="font-size:12px;color:var(--text-secondary);">Total Time Taken</div>
-      `;
-      statsGrid.appendChild(timeCard);
+      if (statsGrid) {
+        const timeCard = document.createElement('div');
+        timeCard.className = 'card';
+        timeCard.style.cssText =
+          'text-align:center; grid-column:span 2;';
+        timeCard.innerHTML = `
+          <div style="font-size:22px;font-weight:800;color:#7C3AED;">
+            ⏱ ${timeStr}
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);">
+            Total Time Taken
+          </div>
+        `;
+        statsGrid.appendChild(timeCard);
+      }
+    }
+
+    // Show skipped vs unattempted breakdown
+    if (skipped > 0 || unattempted > 0) {
+      const statsGrid = document.getElementById('statsGrid');
+      if (statsGrid) {
+        const breakdownCard = document.createElement('div');
+        breakdownCard.className = 'card';
+        breakdownCard.style.cssText =
+          'grid-column:span 2; padding:12px;';
+        breakdownCard.innerHTML = `
+          <div style="font-size:12px;font-weight:700;
+                      margin-bottom:8px;color:var(--text-primary);">
+            Unattempted Breakdown
+          </div>
+          <div style="display:flex;gap:16px;">
+            <div style="text-align:center;">
+              <div style="font-size:18px;font-weight:800;
+                          color:#0284C7;">${skipped}</div>
+              <div style="font-size:11px;color:var(--text-secondary);">
+                Skipped (E)<br/>
+                <span style="color:var(--success);font-size:10px;">
+                  No negative
+                </span>
+              </div>
+            </div>
+            <div style="text-align:center;">
+              <div style="font-size:18px;font-weight:800;
+                          color:#DC2626;">${unattempted}</div>
+              <div style="font-size:11px;color:var(--text-secondary);">
+                Left Blank<br/>
+                <span style="color:var(--danger);font-size:10px;">
+                  Negative applied
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+        statsGrid.appendChild(breakdownCard);
+      }
     }
 
     // Rank board button
@@ -80,20 +135,31 @@ async function loadResult() {
     // Calculate rank
     await calculateRank(attemptData);
 
-    // Chart
-    const ctx = document.getElementById('resultChart').getContext('2d');
+    // Draw chart
+    const ctx = document.getElementById('resultChart')
+      .getContext('2d');
     new Chart(ctx, {
       type: 'doughnut',
       data: {
-        labels: ['Correct', 'Wrong', 'Unattempted', 'Skipped(E)'],
+        labels: [
+          'Correct',
+          'Wrong',
+          'Skipped (E)',
+          'Left Blank'
+        ],
         datasets: [{
           data: [
-            attempt.correct||0,
-            attempt.wrong||0,
-            (attempt.unattempted||0),
-            (attempt.skipped||0)
+            attemptData.correct || 0,
+            attemptData.wrong || 0,
+            skipped,
+            unattempted
           ],
-          backgroundColor: ['#16A34A', '#DC2626', '#94A3B8', '#0284C7'],
+          backgroundColor: [
+            '#16A34A',
+            '#DC2626',
+            '#0284C7',
+            '#94A3B8'
+          ],
           borderWidth: 0
         }]
       },
@@ -104,7 +170,7 @@ async function loadResult() {
       }
     });
 
-    // Answer review
+    // Load answer review
     if (attemptData.answers) {
       await loadAnswerReview(attemptData.answers);
     }
@@ -114,6 +180,7 @@ async function loadResult() {
   }
 }
 
+// ── CALCULATE RANK ──
 async function calculateRank(attempt) {
   try {
     const snap = await getDocs(collection(db, 'testAttempts'));
@@ -132,7 +199,8 @@ async function calculateRank(attempt) {
       return (b.accuracy||0) - (a.accuracy||0);
     });
 
-    const rank = allAttempts.findIndex(a => a.id === attempt.id) + 1;
+    const rank =
+      allAttempts.findIndex(a => a.id === attempt.id) + 1;
     const total = allAttempts.length;
 
     if (rank > 0) {
@@ -153,6 +221,7 @@ async function calculateRank(attempt) {
   } catch(e) { console.error(e); }
 }
 
+// ── ANSWER REVIEW ──
 async function loadAnswerReview(answers) {
   const reviewContainer = document.getElementById('answerReview');
   const questionIds = Object.keys(answers);
@@ -168,35 +237,54 @@ async function loadAnswerReview(answers) {
 
       const q = qSnap.data();
       const answer = answers[qId];
-      const isCorrect = answer.isCorrect;
+      const status = answer.status || 'unattempted';
       const selectedOpt = answer.selectedOption;
+      const isCorrect = answer.isCorrect;
 
+      // Time taken
       const timeTaken = answer.timeTaken || 0;
       const timeDisplay = timeTaken >= 60
         ? `${Math.floor(timeTaken/60)}m ${timeTaken%60}s`
         : `${timeTaken}s`;
 
-      html += `
-        <div class="card" style="border-left:4px solid
-          ${isCorrect ? 'var(--success)'
-            : selectedOpt === -1 ? 'var(--border)'
-            : 'var(--danger)'};">
+      // Status display
+      let statusBadge = '';
+      let borderColor = 'var(--border)';
 
-          <div style="display:flex; justify-content:space-between;
-                      margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-            <span class="badge
-              ${isCorrect ? 'badge-success'
-                : selectedOpt === -1 ? 'badge-primary'
-                : 'badge-danger'}">
-              ${isCorrect ? '✓ Correct'
-                : selectedOpt === -1 ? 'Skipped' : '✗ Wrong'}
-            </span>
-            <div style="display:flex; gap:8px; align-items:center;">
-              <span style="font-size:12px;color:var(--text-secondary);">
+      if (status === 'correct') {
+        statusBadge = `<span class="badge badge-success">✓ Correct</span>`;
+        borderColor = 'var(--success)';
+      } else if (status === 'wrong') {
+        statusBadge = `<span class="badge badge-danger">✗ Wrong</span>`;
+        borderColor = 'var(--danger)';
+      } else if (status === 'skipped') {
+        statusBadge = `
+          <span class="badge"
+            style="background:#E0F2FE;color:#0284C7;">
+            E Skipped
+          </span>`;
+        borderColor = '#0284C7';
+      } else {
+        statusBadge = `<span class="badge badge-warning">Left Blank</span>`;
+        borderColor = 'var(--warning)';
+      }
+
+      html += `
+        <div class="card"
+          style="border-left:4px solid ${borderColor};">
+
+          <div style="display:flex;justify-content:space-between;
+                      margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+            ${statusBadge}
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span style="font-size:12px;
+                           color:var(--text-secondary);">
                 ⏱ ${timeDisplay}
               </span>
-              <span style="font-size:12px;color:var(--text-secondary);">
-                ${answer.marksAwarded > 0 ? '+' : ''}${answer.marksAwarded} marks
+              <span style="font-size:12px;
+                           color:var(--text-secondary);">
+                ${answer.marksAwarded > 0 ? '+' : ''}
+                ${answer.marksAwarded} marks
               </span>
             </div>
           </div>
@@ -208,27 +296,49 @@ async function loadAnswerReview(answers) {
 
           <div style="display:flex;flex-direction:column;gap:6px;">
             ${q.options.map((opt, i) => `
-              <div style="padding:8px 12px;border-radius:8px;font-size:13px;
-                background:${i === q.correctOption ? '#DCFCE7'
-                  : i === selectedOpt && !isCorrect ? '#FEE2E2'
+              <div style="padding:8px 12px;border-radius:8px;
+                          font-size:13px;
+                background:${i === q.correctOption
+                  ? '#DCFCE7'
+                  : i === selectedOpt && status === 'wrong'
+                  ? '#FEE2E2'
                   : '#F8FAFC'};
-                color:${i === q.correctOption ? 'var(--success)'
-                  : i === selectedOpt && !isCorrect ? 'var(--danger)'
+                color:${i === q.correctOption
+                  ? 'var(--success)'
+                  : i === selectedOpt && status === 'wrong'
+                  ? 'var(--danger)'
                   : 'var(--text-secondary)'};
-                border:1px solid ${i === q.correctOption ? '#BBF7D0'
-                  : i === selectedOpt && !isCorrect ? '#FECACA'
+                border:1px solid ${i === q.correctOption
+                  ? '#BBF7D0'
+                  : i === selectedOpt && status === 'wrong'
+                  ? '#FECACA'
                   : 'var(--border)'};">
                 <strong>${optLabels[i]}.</strong> ${opt}
                 ${i === q.correctOption ? ' ✓' : ''}
-                ${i === selectedOpt && !isCorrect ? ' ✗' : ''}
+                ${i === selectedOpt && status === 'wrong'
+                  ? ' ✗' : ''}
               </div>
             `).join('')}
+
+            ${status === 'skipped' ? `
+              <div style="padding:8px 12px;border-radius:8px;
+                          font-size:13px;background:#E0F2FE;
+                          color:#0284C7;border:1px solid #BAE6FD;">
+                <strong>E.</strong> I don't want to attempt
+                <span style="font-size:11px;margin-left:6px;
+                       background:#DCFCE7;color:var(--success);
+                       padding:2px 6px;border-radius:4px;">
+                  No negative marks ✓
+                </span>
+              </div>
+            ` : ''}
           </div>
 
           ${q.explanation ? `
             <div style="margin-top:10px;padding:10px;
                         background:#EFF6FF;border-radius:8px;
-                        font-size:12px;color:var(--primary);line-height:1.6;">
+                        font-size:12px;color:var(--primary);
+                        line-height:1.6;">
               💡 ${q.explanation}
             </div>
           ` : ''}
