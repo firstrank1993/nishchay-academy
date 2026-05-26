@@ -93,9 +93,13 @@ async function loadQuestions() {
   try {
     const snap = await getDocs(collection(db, 'questions'));
     allQuestions = [];
-    snap.forEach(d =>
-      allQuestions.push({ id: d.id, ...d.data() })
-    );
+    snap.forEach(d => {
+      const data = d.data();
+      // Skip test-only questions in practice
+      if (!data.isTestOnly) {
+        allQuestions.push({ id: d.id, ...data });
+      }
+    });
     document.getElementById('practiceLoader').style.display = 'none';
   } catch(e) {
     console.error(e);
