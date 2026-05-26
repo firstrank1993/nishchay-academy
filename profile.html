@@ -115,19 +115,25 @@
       </div>
 
       <!-- Stats Card -->
-      <div class="card" style="margin-bottom:16px;">
-        <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;">My Statistics</h3>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm);">
-            <div style="font-size:22px; font-weight:800; color:var(--primary);" id="statTests">-</div>
-            <div style="font-size:11px; color:var(--text-secondary);">Tests Taken</div>
-          </div>
-          <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm);">
-            <div style="font-size:22px; font-weight:800; color:var(--success);" id="statAccuracy">-</div>
-            <div style="font-size:11px; color:var(--text-secondary);">Avg Accuracy</div>
-          </div>
+    <div class="card" style="margin-bottom:16px;">
+      <h3 style="font-size:15px; font-weight:700; margin-bottom:14px;">My Statistics</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm);">
+          <div style="font-size:22px; font-weight:800; color:var(--primary);" id="statTests">-</div>
+          <div style="font-size:11px; color:var(--text-secondary);">Tests Taken</div>
+        </div>
+        <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm);">
+          <div style="font-size:22px; font-weight:800; color:var(--success);" id="statAccuracy">-</div>
+          <div style="font-size:11px; color:var(--text-secondary);">Avg Accuracy</div>
+        </div>
+        <div style="text-align:center; padding:12px; background:var(--bg); border-radius:var(--radius-sm); grid-column:span 2; cursor:pointer;"
+          onclick="window.location.href='practice.html'">
+          <div style="font-size:22px; font-weight:800; color:#D97706;" id="statBookmarks">-</div>
+          <div style="font-size:11px; color:var(--text-secondary);">🔖 Bookmarked Questions</div>
+          <div style="font-size:11px; color:var(--primary); margin-top:4px;">Tap to practice bookmarks →</div>
         </div>
       </div>
+    </div>
 
       <!-- Logout Button -->
       <button onclick="logout()" class="btn btn-full" style="background:#FEE2E2; color:#DC2626; border:none; padding:13px; font-size:14px; font-weight:600; border-radius:var(--radius-sm); margin-bottom:16px;">
