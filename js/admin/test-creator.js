@@ -19,7 +19,6 @@ let sectionsCache = [];
 let isActive = false;
 let freshQuestionsFromExcel = [];
 let testTotalMarks = 0;
-let dataLoaded = false;
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) { window.location.href = 'index.html'; return; }
@@ -27,7 +26,6 @@ onAuthStateChanged(auth, async (user) => {
   await loadTests();
 });
 
-// ── LOAD ALL DATA FIRST ──
 async function loadAllData() {
   await Promise.all([
     loadExams(),
@@ -35,7 +33,6 @@ async function loadAllData() {
     loadTopics(),
     loadQuestions()
   ]);
-  dataLoaded = true;
 }
 
 async function loadExams() {
@@ -109,12 +106,15 @@ async function loadTests() {
 
       return `
         <div class="card">
-          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:flex-start;
+                      gap:12px;margin-bottom:12px;">
             <div class="exam-body-icon"
               style="background:linear-gradient(135deg,#DC2626,#b91c1c);
                      font-size:20px;flex-shrink:0;">🎯</div>
             <div style="flex:1;">
-              <h3 style="font-size:14px;font-weight:700;">${t.title}</h3>
+              <h3 style="font-size:14px;font-weight:700;">
+                ${t.title}
+              </h3>
               <p style="font-size:12px;color:var(--text-secondary);">
                 ${t.duration} min • ${t.totalMarks} marks •
                 ${t.isActive ? '🟢 Active' : '🔴 Inactive'}
@@ -159,7 +159,7 @@ async function loadTests() {
 // ── MARKS TRACKING ──
 function getUsedMarks() {
   return sectionsCache.reduce((total, s) => {
-    return total + ((s.questionIds?.length || 0) * (s.marksPerQ || 1));
+    return total + ((s.questionIds?.length||0) * (s.marksPerQ||1));
   }, 0);
 }
 
@@ -171,7 +171,8 @@ function updateMarksDisplay() {
   const used = getUsedMarks();
   const total = testTotalMarks;
   const remaining = total - used;
-  const percent = total > 0 ? Math.min((used / total) * 100, 100) : 0;
+  const percent = total > 0
+    ? Math.min((used/total)*100, 100) : 0;
 
   const display = document.getElementById('marksUsedDisplay');
   const bar = document.getElementById('marksProgressBar');
@@ -194,8 +195,10 @@ function updateMarksDisplay() {
 }
 
 window.checkMarksWarning = function() {
-  const qCount = parseInt(document.getElementById('questionCount')?.value) || 0;
-  const marksPerQ = parseFloat(document.getElementById('marksPerQ')?.value) || 1;
+  const qCount =
+    parseInt(document.getElementById('questionCount')?.value)||0;
+  const marksPerQ =
+    parseFloat(document.getElementById('marksPerQ')?.value)||1;
   const sectionMarks = qCount * marksPerQ;
   const remaining = getRemainingMarks();
   const warning = document.getElementById('marksWarning');
@@ -205,7 +208,7 @@ window.checkMarksWarning = function() {
   if (sectionMarks > remaining && remaining >= 0) {
     warning.style.display = 'block';
     warningText.textContent =
-      `This section will use ${sectionMarks} marks but only ${remaining} marks remaining. Please adjust.`;
+      `This section needs ${sectionMarks} marks but only ${remaining} remaining.`;
   } else {
     warning.style.display = 'none';
   }
@@ -217,29 +220,40 @@ function renderSubjectCheckboxes() {
   if (!container) return;
 
   if (subjectsCache.length === 0) {
-    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">No subjects found.</p>';
+    container.innerHTML =
+      '<p style="font-size:12px;color:var(--text-secondary);">No subjects found.</p>';
     return;
   }
 
   container.innerHTML = `
-    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
-                  background:#EFF6FF;border-radius:var(--radius-sm);cursor:pointer;
-                  border:1.5px solid var(--primary);margin-bottom:6px;">
+    <label style="display:flex;align-items:center;gap:10px;
+                  padding:8px 12px;background:#EFF6FF;
+                  border-radius:var(--radius-sm);cursor:pointer;
+                  border:1.5px solid var(--primary);
+                  margin-bottom:6px;">
       <input type="checkbox" id="selectAllSubjects"
         onchange="toggleAllSubjects(this.checked)"
-        style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
-      <span style="font-size:14px;font-weight:700;color:var(--primary);">
+        style="width:18px;height:18px;cursor:pointer;
+               accent-color:var(--primary);"/>
+      <span style="font-size:14px;font-weight:700;
+                   color:var(--primary);">
         ✅ Select All Subjects
       </span>
     </label>
     ${subjectsCache.map(s => `
-      <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
-                    background:var(--bg);border-radius:var(--radius-sm);cursor:pointer;
-                    border:1px solid var(--border);margin-bottom:4px;">
-        <input type="checkbox" value="${s.id}" class="subject-checkbox"
+      <label style="display:flex;align-items:center;gap:10px;
+                    padding:8px 12px;background:var(--bg);
+                    border-radius:var(--radius-sm);cursor:pointer;
+                    border:1px solid var(--border);
+                    margin-bottom:4px;">
+        <input type="checkbox" value="${s.id}"
+          class="subject-checkbox"
           onchange="onSubjectChange()"
-          style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
-        <span style="font-size:14px;font-weight:500;">📚 ${s.name}</span>
+          style="width:18px;height:18px;cursor:pointer;
+                 accent-color:var(--primary);"/>
+        <span style="font-size:14px;font-weight:500;">
+          📚 ${s.name}
+        </span>
       </label>
     `).join('')}
   `;
@@ -282,7 +296,8 @@ function renderTopicCheckboxes(subjectIds) {
   if (!container) return;
 
   if (subjectIds.length === 0) {
-    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first to see topics.</p>';
+    container.innerHTML =
+      '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first.</p>';
     return;
   }
 
@@ -291,18 +306,23 @@ function renderTopicCheckboxes(subjectIds) {
   );
 
   if (filteredTopics.length === 0) {
-    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">No topics found for selected subjects.</p>';
+    container.innerHTML =
+      '<p style="font-size:12px;color:var(--text-secondary);">No topics found.</p>';
     return;
   }
 
   let html = `
-    <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
-                  background:#EFF6FF;border-radius:var(--radius-sm);cursor:pointer;
-                  border:1.5px solid var(--primary);margin-bottom:6px;">
+    <label style="display:flex;align-items:center;gap:10px;
+                  padding:8px 12px;background:#EFF6FF;
+                  border-radius:var(--radius-sm);cursor:pointer;
+                  border:1.5px solid var(--primary);
+                  margin-bottom:6px;">
       <input type="checkbox" id="selectAllTopics"
         onchange="toggleAllTopics(this.checked)"
-        style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
-      <span style="font-size:14px;font-weight:700;color:var(--primary);">
+        style="width:18px;height:18px;cursor:pointer;
+               accent-color:var(--primary);"/>
+      <span style="font-size:14px;font-weight:700;
+                   color:var(--primary);">
         ✅ Select All Topics
       </span>
     </label>
@@ -310,21 +330,25 @@ function renderTopicCheckboxes(subjectIds) {
 
   subjectIds.forEach(sId => {
     const subject = subjectsCache.find(s => s.id === sId);
-    const subjectTopics = filteredTopics.filter(t => t.subjectId === sId);
+    const subjectTopics =
+      filteredTopics.filter(t => t.subjectId === sId);
     if (subjectTopics.length === 0) return;
 
     html += `
       <div style="margin-bottom:10px;">
-        <p style="font-size:12px;font-weight:700;color:var(--primary);
-                  margin-bottom:6px;padding-left:4px;">
+        <p style="font-size:12px;font-weight:700;
+                  color:var(--primary);margin-bottom:6px;">
           📚 ${subject?.name || ''}
         </p>
         ${subjectTopics.map(t => `
-          <label style="display:flex;align-items:center;gap:10px;padding:8px 12px;
-                        background:var(--bg);border-radius:var(--radius-sm);
-                        cursor:pointer;border:1px solid var(--border);
+          <label style="display:flex;align-items:center;gap:10px;
+                        padding:8px 12px;background:var(--bg);
+                        border-radius:var(--radius-sm);
+                        cursor:pointer;
+                        border:1px solid var(--border);
                         margin-bottom:4px;">
-            <input type="checkbox" value="${t.id}" class="topic-checkbox"
+            <input type="checkbox" value="${t.id}"
+              class="topic-checkbox"
               onchange="updateAvailableCount()"
               style="width:18px;height:18px;cursor:pointer;
                      accent-color:var(--primary);"/>
@@ -338,22 +362,32 @@ function renderTopicCheckboxes(subjectIds) {
   container.innerHTML = html;
 }
 
-// ── UPDATE AVAILABLE COUNT ──
 window.updateAvailableCount = function() {
   const topicIds = getSelectedTopicIds();
   const sources = [];
-  if (document.getElementById('sourcePYQ')?.checked) sources.push('PYQ');
-  if (document.getElementById('sourceIMP')?.checked) sources.push('IMP');
+  if (document.getElementById('sourcePYQ')?.checked)
+    sources.push('PYQ');
+  if (document.getElementById('sourceIMP')?.checked)
+    sources.push('IMP');
 
   const difficulties = [];
-  if (document.getElementById('diffEasy')?.checked) difficulties.push('easy');
-  if (document.getElementById('diffMedium')?.checked) difficulties.push('medium');
-  if (document.getElementById('diffHard')?.checked) difficulties.push('hard');
+  if (document.getElementById('diffEasy')?.checked)
+    difficulties.push('easy');
+  if (document.getElementById('diffMedium')?.checked)
+    difficulties.push('medium');
+  if (document.getElementById('diffHard')?.checked)
+    difficulties.push('hard');
 
+  // Only count questions that are NOT test-only
   const available = questionsCache.filter(q => {
-    const matchTopic = topicIds.length === 0 || topicIds.includes(q.topicId);
-    const matchSource = sources.length === 0 || sources.includes(q.type);
-    const matchDiff = difficulties.length === 0 || difficulties.includes(q.difficulty);
+    if (q.isTestOnly) return false;
+    const matchTopic =
+      topicIds.length === 0 || topicIds.includes(q.topicId);
+    const matchSource =
+      sources.length === 0 || sources.includes(q.type);
+    const matchDiff =
+      difficulties.length === 0 ||
+      difficulties.includes(q.difficulty);
     return matchTopic && matchSource && matchDiff;
   });
 
@@ -361,9 +395,9 @@ window.updateAvailableCount = function() {
   if (info) {
     info.textContent = topicIds.length === 0
       ? 'Select topics to see available questions.'
-      : `✅ ${available.length} questions available matching your filters.`;
-    info.style.color = available.length > 0
-      ? 'var(--success)' : 'var(--danger)';
+      : `✅ ${available.length} questions available.`;
+    info.style.color =
+      available.length > 0 ? 'var(--success)' : 'var(--danger)';
   }
 
   checkMarksWarning();
@@ -378,13 +412,15 @@ window.toggleActive = function() {
 
 window.toggleTestActive = async function(testId, current) {
   try {
-    await updateDoc(doc(db, 'tests', testId), { isActive: !current });
-    showToast(`Test ${!current ? 'activated':'deactivated'}!`, 'success');
+    await updateDoc(doc(db, 'tests', testId),
+      { isActive: !current });
+    showToast(
+      `Test ${!current ? 'activated':'deactivated'}!`, 'success'
+    );
     await loadTests();
   } catch(e) { showToast('Error', 'error'); }
 };
 
-// ── DELETE TEST ──
 window.deleteTest = async function(testId) {
   if (!confirm('Delete this test permanently?')) return;
   try {
@@ -392,7 +428,9 @@ window.deleteTest = async function(testId) {
       collection(db, 'tests', testId, 'sections')
     );
     for (const s of sectionsSnap.docs) {
-      await deleteDoc(doc(db, 'tests', testId, 'sections', s.id));
+      await deleteDoc(
+        doc(db, 'tests', testId, 'sections', s.id)
+      );
     }
     await deleteDoc(doc(db, 'tests', testId));
     showToast('Test deleted!', 'success');
@@ -403,11 +441,12 @@ window.deleteTest = async function(testId) {
   }
 };
 
-// ── SHARE & RANK ──
 window.shareTest = function(testId, encodedTitle) {
   const testTitle = decodeURIComponent(encodedTitle);
-  const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
-  const message = `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt this mock test now:\n${url}`;
+  const url =
+    `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
+  const message =
+    `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt now:\n${url}`;
   if (navigator.share) {
     navigator.share({ title: testTitle, text: message, url });
   } else {
@@ -421,7 +460,7 @@ window.viewRankBoard = function(testId) {
   window.open(`/rankboard.html?testId=${testId}`, '_blank');
 };
 
-// ── CREATE FORM ──
+// ── FORM ──
 window.showCreateForm = function() {
   currentTestId = null;
   sectionsCache = [];
@@ -429,14 +468,16 @@ window.showCreateForm = function() {
   freshQuestionsFromExcel = [];
   testTotalMarks = 0;
 
-  document.getElementById('testFormTitle').textContent = 'Create Test';
+  document.getElementById('testFormTitle').textContent =
+    'Create Test';
   document.getElementById('testTitle').value = '';
   document.getElementById('testExamSelect').value = '';
   document.getElementById('testDuration').value = '';
   document.getElementById('testTotalMarks').value = '';
   document.getElementById('testActivateAt').value = '';
   document.getElementById('testExpiresAt').value = '';
-  document.getElementById('toggleSlider').style.background = '#CBD5E1';
+  document.getElementById('toggleSlider').style.background =
+    '#CBD5E1';
   document.getElementById('sectionsArea').style.display = 'none';
   document.getElementById('sectionsList').innerHTML = '';
   document.getElementById('testsListSection').style.display = 'none';
@@ -445,7 +486,8 @@ window.showCreateForm = function() {
 
 window.hideCreateForm = function() {
   document.getElementById('testForm').style.display = 'none';
-  document.getElementById('testsListSection').style.display = 'block';
+  document.getElementById('testsListSection').style.display =
+    'block';
   currentTestId = null;
 };
 
@@ -457,11 +499,15 @@ window.editTest = async function(testId) {
     currentTestId = testId;
     testTotalMarks = t.totalMarks || 0;
 
-    document.getElementById('testFormTitle').textContent = 'Edit Test';
+    document.getElementById('testFormTitle').textContent =
+      'Edit Test';
     document.getElementById('testTitle').value = t.title || '';
-    document.getElementById('testExamSelect').value = t.examId || '';
-    document.getElementById('testDuration').value = t.duration || '';
-    document.getElementById('testTotalMarks').value = t.totalMarks || '';
+    document.getElementById('testExamSelect').value =
+      t.examId || '';
+    document.getElementById('testDuration').value =
+      t.duration || '';
+    document.getElementById('testTotalMarks').value =
+      t.totalMarks || '';
     isActive = t.isActive || false;
     document.getElementById('toggleSlider').style.background =
       isActive ? 'var(--primary)' : '#CBD5E1';
@@ -484,7 +530,8 @@ window.editTest = async function(testId) {
       document.getElementById('testExpiresAt').value = '';
     }
 
-    document.getElementById('testsListSection').style.display = 'none';
+    document.getElementById('testsListSection').style.display =
+      'none';
     document.getElementById('testForm').style.display = 'block';
     document.getElementById('sectionsArea').style.display = 'block';
 
@@ -494,17 +541,24 @@ window.editTest = async function(testId) {
   } catch(e) { console.error(e); }
 };
 
-// ── SAVE TEST ──
 window.saveTestDetails = async function() {
-  const title = document.getElementById('testTitle').value.trim();
-  const examId = document.getElementById('testExamSelect').value;
-  const duration = parseInt(document.getElementById('testDuration').value) || 60;
-  const totalMarks = parseInt(document.getElementById('testTotalMarks').value) || 0;
-  const activateAtVal = document.getElementById('testActivateAt').value;
-  const expiresAtVal = document.getElementById('testExpiresAt').value;
+  const title =
+    document.getElementById('testTitle').value.trim();
+  const examId =
+    document.getElementById('testExamSelect').value;
+  const duration =
+    parseInt(document.getElementById('testDuration').value)||60;
+  const totalMarks =
+    parseInt(document.getElementById('testTotalMarks').value)||0;
+  const activateAtVal =
+    document.getElementById('testActivateAt').value;
+  const expiresAtVal =
+    document.getElementById('testExpiresAt').value;
 
-  if (!title) { showToast('Enter test title', 'error'); return; }
-  if (totalMarks <= 0) { showToast('Enter valid total marks', 'error'); return; }
+  if (!title) { showToast('Enter test title','error'); return; }
+  if (totalMarks <= 0) {
+    showToast('Enter valid total marks','error'); return;
+  }
 
   testTotalMarks = totalMarks;
 
@@ -540,7 +594,6 @@ window.saveTestDetails = async function() {
   btn.disabled = false; btn.textContent = 'Save & Add Sections';
 };
 
-// ── SECTIONS ──
 async function loadSections(testId) {
   const list = document.getElementById('sectionsList');
   try {
@@ -548,36 +601,43 @@ async function loadSections(testId) {
       collection(db, 'tests', testId, 'sections')
     );
     sectionsCache = [];
-    snap.forEach(d => sectionsCache.push({ id: d.id, ...d.data() }));
+    snap.forEach(d =>
+      sectionsCache.push({ id: d.id, ...d.data() })
+    );
     sectionsCache.sort((a, b) => (a.order||0) - (b.order||0));
 
     updateMarksDisplay();
 
     if (sectionsCache.length === 0) {
-      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet.</p>';
+      list.innerHTML =
+        '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet.</p>';
       return;
     }
 
     list.innerHTML = sectionsCache.map(s => {
       const sectionMarks =
-        (s.questionIds?.length || 0) * (s.marksPerQ || 1);
+        (s.questionIds?.length||0) * (s.marksPerQ||1);
       return `
         <div class="card">
           <div style="display:flex;justify-content:space-between;
                       align-items:center;margin-bottom:8px;">
-            <h4 style="font-size:14px;font-weight:700;">${s.title}</h4>
+            <h4 style="font-size:14px;font-weight:700;">
+              ${s.title}
+            </h4>
             <button onclick="deleteSection('${s.id}')"
               class="btn btn-sm"
-              style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
+              style="background:#FEE2E2;color:#DC2626;border:none;">
+              Del
+            </button>
           </div>
           <div style="font-size:12px;color:var(--text-secondary);
                       display:flex;flex-wrap:wrap;gap:8px;">
-            <span>📝 ${s.questionIds?.length || 0} questions</span>
+            <span>📝 ${s.questionIds?.length||0} questions</span>
             <span>✅ ${s.marksPerQ} marks/Q</span>
             <span>❌ ${s.negativeMarks > 0
               ? '-'+s.negativeMarks : 'No negative'}</span>
             <span style="color:var(--primary);font-weight:600;">
-              🏆 ${sectionMarks} marks total
+              🏆 ${sectionMarks} marks
             </span>
           </div>
         </div>
@@ -589,8 +649,6 @@ async function loadSections(testId) {
 
 window.showAddSection = function() {
   freshQuestionsFromExcel = [];
-
-  // Reset form
   document.getElementById('freshQStatus').style.display = 'none';
   document.getElementById('sectionTitle').value = '';
   document.getElementById('marksPerQ').value = '1';
@@ -602,22 +660,21 @@ window.showAddSection = function() {
   document.getElementById('availableCountInfo').style.color =
     'var(--text-secondary)';
 
-  // Reset source checkboxes
   document.getElementById('sourcePYQ').checked = false;
   document.getElementById('sourceIMP').checked = true;
   document.getElementById('diffEasy').checked = true;
   document.getElementById('diffMedium').checked = true;
   document.getElementById('diffHard').checked = true;
 
-  // Reset topic list
   document.getElementById('topicCheckboxes').innerHTML =
-    '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first to see topics.</p>';
+    '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first.</p>';
 
-  // Render subject checkboxes with fresh data
   renderSubjectCheckboxes();
 
   document.getElementById('sectionForm').style.display = 'block';
-  document.getElementById('sectionForm').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('sectionForm').scrollIntoView({
+    behavior: 'smooth'
+  });
 };
 
 window.hideSectionForm = function() {
@@ -626,26 +683,33 @@ window.hideSectionForm = function() {
 };
 
 window.saveSection = async function() {
-  const title = document.getElementById('sectionTitle').value.trim();
-  const marksPerQ = parseFloat(document.getElementById('marksPerQ').value) || 1;
-  const negativeMarks = parseFloat(document.getElementById('negativeMarks').value) || 0;
-  const questionCount = parseInt(document.getElementById('questionCount').value) || 0;
+  const title =
+    document.getElementById('sectionTitle').value.trim();
+  const marksPerQ =
+    parseFloat(document.getElementById('marksPerQ').value)||1;
+  const negativeMarks =
+    parseFloat(document.getElementById('negativeMarks').value)||0;
+  const questionCount =
+    parseInt(document.getElementById('questionCount').value)||0;
 
-  if (!title) { showToast('Enter section title', 'error'); return; }
-  if (!currentTestId) { showToast('Save test first', 'error'); return; }
+  if (!title) { showToast('Enter section title','error'); return; }
+  if (!currentTestId) {
+    showToast('Save test first','error'); return;
+  }
 
-  // Marks validation
   const sectionMarks = questionCount * marksPerQ;
   const remaining = getRemainingMarks();
 
-  if (freshQuestionsFromExcel.length === 0 && questionCount === 0) {
-    showToast('Enter number of questions or upload Excel', 'error');
+  if (freshQuestionsFromExcel.length === 0 &&
+      questionCount === 0) {
+    showToast('Enter question count or upload Excel','error');
     return;
   }
 
-  if (freshQuestionsFromExcel.length === 0 && sectionMarks > remaining) {
+  if (freshQuestionsFromExcel.length === 0 &&
+      sectionMarks > remaining) {
     showToast(
-      `Warning: ${sectionMarks} marks needed but only ${remaining} remaining. Please adjust.`,
+      `${sectionMarks} marks needed but only ${remaining} remaining.`,
       'warning'
     );
     return;
@@ -658,36 +722,51 @@ window.saveSection = async function() {
     let questionIds = [];
 
     if (freshQuestionsFromExcel.length > 0) {
+      // ⭐ KEY FIX: Save with isTestOnly: true
       showToast('Saving fresh questions...', 'info');
       for (const qData of freshQuestionsFromExcel) {
         const ref = await addDoc(collection(db, 'questions'), {
-          ...qData, createdAt: serverTimestamp()
+          ...qData,
+          isTestOnly: true,  // ← This prevents showing in practice
+          createdAt: serverTimestamp()
         });
         questionIds.push(ref.id);
       }
       freshQuestionsFromExcel = [];
-      document.getElementById('freshQStatus').style.display = 'none';
+      document.getElementById('freshQStatus').style.display =
+        'none';
 
     } else {
       const topicIds = getSelectedTopicIds();
       const sources = [];
-      if (document.getElementById('sourcePYQ').checked) sources.push('PYQ');
-      if (document.getElementById('sourceIMP').checked) sources.push('IMP');
+      if (document.getElementById('sourcePYQ').checked)
+        sources.push('PYQ');
+      if (document.getElementById('sourceIMP').checked)
+        sources.push('IMP');
 
       const difficulties = [];
-      if (document.getElementById('diffEasy').checked) difficulties.push('easy');
-      if (document.getElementById('diffMedium').checked) difficulties.push('medium');
-      if (document.getElementById('diffHard').checked) difficulties.push('hard');
+      if (document.getElementById('diffEasy').checked)
+        difficulties.push('easy');
+      if (document.getElementById('diffMedium').checked)
+        difficulties.push('medium');
+      if (document.getElementById('diffHard').checked)
+        difficulties.push('hard');
 
+      // Only pick non-testOnly questions
       const filtered = questionsCache.filter(q => {
-        const matchTopic = topicIds.length === 0 || topicIds.includes(q.topicId);
-        const matchSource = sources.length === 0 || sources.includes(q.type);
-        const matchDiff = difficulties.length === 0 || difficulties.includes(q.difficulty);
+        if (q.isTestOnly) return false;
+        const matchTopic =
+          topicIds.length === 0 || topicIds.includes(q.topicId);
+        const matchSource =
+          sources.length === 0 || sources.includes(q.type);
+        const matchDiff =
+          difficulties.length === 0 ||
+          difficulties.includes(q.difficulty);
         return matchTopic && matchSource && matchDiff;
       });
 
       if (filtered.length === 0) {
-        showToast('No questions found matching your filters', 'error');
+        showToast('No questions found matching filters','error');
         btn.disabled = false; btn.textContent = 'Add Section';
         return;
       }
@@ -696,19 +775,24 @@ window.saveSection = async function() {
       questionIds = shuffled.slice(0, questionCount).map(q => q.id);
     }
 
-    await addDoc(collection(db, 'tests', currentTestId, 'sections'), {
-      title, questionIds, marksPerQ, negativeMarks,
-      order: sectionsCache.length + 1,
-      createdAt: serverTimestamp()
-    });
+    await addDoc(
+      collection(db, 'tests', currentTestId, 'sections'), {
+        title, questionIds, marksPerQ, negativeMarks,
+        order: sectionsCache.length + 1,
+        createdAt: serverTimestamp()
+      }
+    );
 
-    showToast(`Section added with ${questionIds.length} questions!`, 'success');
+    showToast(
+      `Section added with ${questionIds.length} questions!`,
+      'success'
+    );
     hideSectionForm();
     await loadSections(currentTestId);
     updateMarksDisplay();
 
   } catch(e) {
-    showToast('Error adding section', 'error');
+    showToast('Error adding section','error');
     console.error(e);
   }
 
@@ -721,15 +805,15 @@ window.deleteSection = async function(sectionId) {
     await deleteDoc(
       doc(db, 'tests', currentTestId, 'sections', sectionId)
     );
-    showToast('Section deleted!', 'success');
+    showToast('Section deleted!','success');
     await loadSections(currentTestId);
     updateMarksDisplay();
-  } catch(e) { showToast('Error', 'error'); }
+  } catch(e) { showToast('Error','error'); }
 };
 
 window.finishTest = async function() {
   if (sectionsCache.length === 0) {
-    showToast('Add at least one section first', 'error');
+    showToast('Add at least one section first','error');
     return;
   }
 
@@ -737,11 +821,11 @@ window.finishTest = async function() {
   if (used !== testTotalMarks && testTotalMarks > 0) {
     const diff = testTotalMarks - used;
     if (!confirm(
-      `Warning: Marks used (${used}) ${diff > 0 ? 'is less than' : 'exceeds'} total marks (${testTotalMarks}) by ${Math.abs(diff)}. Publish anyway?`
+      `Marks used (${used}) differs from total (${testTotalMarks}) by ${Math.abs(diff)}. Publish anyway?`
     )) return;
   }
 
-  showToast('Test published successfully! 🎉', 'success');
+  showToast('Test published! 🎉','success');
   setTimeout(() => { hideCreateForm(); loadTests(); }, 1500);
 };
 
@@ -750,7 +834,7 @@ window.downloadFreshQTemplate = function() {
   const wb = XLSX.utils.book_new();
   const headers = [
     'Question Text',
-    'Option A', 'Option B', 'Option C', 'Option D',
+    'Option A','Option B','Option C','Option D',
     'Correct Answer (A/B/C/D)',
     'Type (PYQ or IMP)',
     'Difficulty (easy/medium/hard)',
@@ -761,16 +845,16 @@ window.downloadFreshQTemplate = function() {
   ];
   const sample = [
     'Which article deals with Right to Equality?',
-    'Article 12', 'Article 14', 'Article 19', 'Article 21',
-    'B', 'PYQ', 'medium',
+    'Article 12','Article 14','Article 19','Article 21',
+    'B','PYQ','medium',
     'Article 14 deals with Right to Equality',
-    'Talati', '2022', 'GPSSB'
+    'Talati','2022','GPSSB'
   ];
   const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
   ws['!cols'] = headers.map(() => ({ wch: 20 }));
   XLSX.utils.book_append_sheet(wb, ws, 'Questions');
   XLSX.writeFile(wb, 'fresh_questions_template.xlsx');
-  showToast('Template downloaded!', 'success');
+  showToast('Template downloaded!','success');
 };
 
 window.handleFreshQUpload = async function(event) {
@@ -832,7 +916,6 @@ window.handleFreshQUpload = async function(event) {
   event.target.value = '';
 };
 
-// ── TOAST ──
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;

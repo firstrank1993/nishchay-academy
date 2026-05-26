@@ -59,9 +59,13 @@ async function loadQuestions() {
   try {
     const snap = await getDocs(collection(db, 'questions'));
     questionsCache = [];
-    snap.forEach(d =>
-      questionsCache.push({ id: d.id, ...d.data() })
-    );
+    snap.forEach(d => {
+      const data = d.data();
+      // Skip test-only questions from main question bank
+      if (!data.isTestOnly) {
+        questionsCache.push({ id: d.id, ...data });
+      }
+    });
     filteredQuestions = [...questionsCache];
 
     loader.style.display = 'none';
