@@ -26,6 +26,7 @@ onAuthStateChanged(auth, async (user) => {
   await loadTests();
 });
 
+// ── LOAD ALL DATA ──
 async function loadAllData() {
   await Promise.all([
     loadExams(),
@@ -65,11 +66,60 @@ async function loadTopics() {
 async function loadQuestions() {
   const snap = await getDocs(collection(db, 'questions'));
   questionsCache = [];
-  snap.forEach(d => questionsCache.push({ id: d.id, ...d.data() }));
+  snap.forEach(d => {
+    const data = d.data();
+    // Only load non-testOnly questions for selection
+    if (!data.isTestOnly) {
+      questionsCache.push({ id: d.id, ...data });
+    }
+  });
+}
+
+// ── AUTO CLEANUP EXPIRED TEST QUESTIONS ──
+async function cleanupExpiredTestQuestions() {
+  try {
+    const now = new Date();
+    const snap = await getDocs(collection(db, 'tests'));
+
+    for (const testDoc of snap.docs) {
+      const t = testDoc.data();
+
+      // Check if test is expired
+      const isExpired = t.expiresAt &&
+        (t.expiresAt.toDate
+          ? t.expiresAt.toDate() < now
+          : new Date(t.expiresAt) < now);
+
+      if (!isExpired) continue;
+
+      // Get sections and find testOnly questions
+      const sectionsSnap = await getDocs(
+        collection(db, 'tests', testDoc.id, 'sections')
+      );
+
+      for (const s of sectionsSnap.docs) {
+        const questionIds = s.data().questionIds || [];
+        for (const qId of questionIds) {
+          try {
+            const qSnap = await getDoc(doc(db, 'questions', qId));
+            if (qSnap.exists() &&
+                qSnap.data().isTestOnly === true) {
+              await deleteDoc(doc(db, 'questions', qId));
+            }
+          } catch(e) { /* silent fail */ }
+        }
+      }
+    }
+  } catch(e) {
+    console.error('Cleanup error:', e);
+  }
 }
 
 // ── LOAD TESTS LIST ──
 async function loadTests() {
+  // Run cleanup first silently
+  await cleanupExpiredTestQuestions();
+
   const loader = document.getElementById('testsLoader');
   const list = document.getElementById('testsList');
 
@@ -208,7 +258,7 @@ window.checkMarksWarning = function() {
   if (sectionMarks > remaining && remaining >= 0) {
     warning.style.display = 'block';
     warningText.textContent =
-      `This section needs ${sectionMarks} marks but only ${remaining} remaining.`;
+      `This section needs ${sectionMarks} marks but only ${remaining} remaining. Please adjust.`;
   } else {
     warning.style.display = 'none';
   }
@@ -378,7 +428,6 @@ window.updateAvailableCount = function() {
   if (document.getElementById('diffHard')?.checked)
     difficulties.push('hard');
 
-  // Only count questions that are NOT test-only
   const available = questionsCache.filter(q => {
     if (q.isTestOnly) return false;
     const matchTopic =
@@ -421,26 +470,63 @@ window.toggleTestActive = async function(testId, current) {
   } catch(e) { showToast('Error', 'error'); }
 };
 
+// ── DELETE TEST (with auto cleanup of testOnly questions) ──
 window.deleteTest = async function(testId) {
   if (!confirm('Delete this test permanently?')) return;
   try {
+    // Step 1 — Get all sections
     const sectionsSnap = await getDocs(
       collection(db, 'tests', testId, 'sections')
     );
+
+    // Step 2 — Collect all isTestOnly question IDs
+    const testOnlyQuestionIds = new Set();
     for (const s of sectionsSnap.docs) {
+      const sectionData = s.data();
+      const questionIds = sectionData.questionIds || [];
+
+      for (const qId of questionIds) {
+        try {
+          const qSnap = await getDoc(doc(db, 'questions', qId));
+          if (qSnap.exists() &&
+              qSnap.data().isTestOnly === true) {
+            testOnlyQuestionIds.add(qId);
+          }
+        } catch(e) { console.error(e); }
+      }
+
+      // Delete section
       await deleteDoc(
         doc(db, 'tests', testId, 'sections', s.id)
       );
     }
+
+    // Step 3 — Delete all isTestOnly questions
+    for (const qId of testOnlyQuestionIds) {
+      try {
+        await deleteDoc(doc(db, 'questions', qId));
+      } catch(e) { console.error(e); }
+    }
+
+    // Step 4 — Delete the test itself
     await deleteDoc(doc(db, 'tests', testId));
-    showToast('Test deleted!', 'success');
+
+    const deletedQCount = testOnlyQuestionIds.size;
+    showToast(
+      `Test deleted!${deletedQCount > 0
+        ? ' ' + deletedQCount + ' test-only questions removed.'
+        : ''}`,
+      'success'
+    );
     await loadTests();
+
   } catch(e) {
     showToast('Error deleting', 'error');
     console.error(e);
   }
 };
 
+// ── SHARE & RANK ──
 window.shareTest = function(testId, encodedTitle) {
   const testTitle = decodeURIComponent(encodedTitle);
   const url =
@@ -460,7 +546,7 @@ window.viewRankBoard = function(testId) {
   window.open(`/rankboard.html?testId=${testId}`, '_blank');
 };
 
-// ── FORM ──
+// ── CREATE FORM ──
 window.showCreateForm = function() {
   currentTestId = null;
   sectionsCache = [];
@@ -480,7 +566,8 @@ window.showCreateForm = function() {
     '#CBD5E1';
   document.getElementById('sectionsArea').style.display = 'none';
   document.getElementById('sectionsList').innerHTML = '';
-  document.getElementById('testsListSection').style.display = 'none';
+  document.getElementById('testsListSection').style.display =
+    'none';
   document.getElementById('testForm').style.display = 'block';
 };
 
@@ -533,7 +620,8 @@ window.editTest = async function(testId) {
     document.getElementById('testsListSection').style.display =
       'none';
     document.getElementById('testForm').style.display = 'block';
-    document.getElementById('sectionsArea').style.display = 'block';
+    document.getElementById('sectionsArea').style.display =
+      'block';
 
     await loadSections(testId);
     updateMarksDisplay();
@@ -541,6 +629,7 @@ window.editTest = async function(testId) {
   } catch(e) { console.error(e); }
 };
 
+// ── SAVE TEST ──
 window.saveTestDetails = async function() {
   const title =
     document.getElementById('testTitle').value.trim();
@@ -582,7 +671,8 @@ window.saveTestDetails = async function() {
       showToast('Test created! Now add sections.', 'success');
     }
 
-    document.getElementById('sectionsArea').style.display = 'block';
+    document.getElementById('sectionsArea').style.display =
+      'block';
     await loadSections(currentTestId);
     updateMarksDisplay();
 
@@ -594,6 +684,7 @@ window.saveTestDetails = async function() {
   btn.disabled = false; btn.textContent = 'Save & Add Sections';
 };
 
+// ── SECTIONS ──
 async function loadSections(testId) {
   const list = document.getElementById('sectionsList');
   try {
@@ -709,7 +800,7 @@ window.saveSection = async function() {
   if (freshQuestionsFromExcel.length === 0 &&
       sectionMarks > remaining) {
     showToast(
-      `${sectionMarks} marks needed but only ${remaining} remaining.`,
+      `${sectionMarks} marks needed but only ${remaining} remaining. Please adjust.`,
       'warning'
     );
     return;
@@ -722,12 +813,12 @@ window.saveSection = async function() {
     let questionIds = [];
 
     if (freshQuestionsFromExcel.length > 0) {
-      // ⭐ KEY FIX: Save with isTestOnly: true
+      // Save with isTestOnly: true — won't show in practice
       showToast('Saving fresh questions...', 'info');
       for (const qData of freshQuestionsFromExcel) {
         const ref = await addDoc(collection(db, 'questions'), {
           ...qData,
-          isTestOnly: true,  // ← This prevents showing in practice
+          isTestOnly: true,
           createdAt: serverTimestamp()
         });
         questionIds.push(ref.id);
@@ -752,7 +843,6 @@ window.saveSection = async function() {
       if (document.getElementById('diffHard').checked)
         difficulties.push('hard');
 
-      // Only pick non-testOnly questions
       const filtered = questionsCache.filter(q => {
         if (q.isTestOnly) return false;
         const matchTopic =
@@ -802,6 +892,23 @@ window.saveSection = async function() {
 window.deleteSection = async function(sectionId) {
   if (!confirm('Delete this section?')) return;
   try {
+    // Also delete testOnly questions in this section
+    const sectionSnap = await getDoc(
+      doc(db, 'tests', currentTestId, 'sections', sectionId)
+    );
+    if (sectionSnap.exists()) {
+      const questionIds = sectionSnap.data().questionIds || [];
+      for (const qId of questionIds) {
+        try {
+          const qSnap = await getDoc(doc(db, 'questions', qId));
+          if (qSnap.exists() &&
+              qSnap.data().isTestOnly === true) {
+            await deleteDoc(doc(db, 'questions', qId));
+          }
+        } catch(e) { /* skip */ }
+      }
+    }
+
     await deleteDoc(
       doc(db, 'tests', currentTestId, 'sections', sectionId)
     );
@@ -888,7 +995,8 @@ window.handleFreshQUpload = async function(event) {
           String(row[5]||'A').trim().toUpperCase()
         ),
         type: type === 'PYQ' ? 'PYQ' : 'IMP',
-        difficulty: String(row[7]||'medium').trim().toLowerCase(),
+        difficulty:
+          String(row[7]||'medium').trim().toLowerCase(),
         explanation: String(row[8]||'').trim()
       };
 
@@ -916,6 +1024,7 @@ window.handleFreshQUpload = async function(event) {
   event.target.value = '';
 };
 
+// ── TOAST ──
 window.showToast = function(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
