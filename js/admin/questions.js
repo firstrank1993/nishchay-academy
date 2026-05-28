@@ -38,10 +38,8 @@ async function loadSubjects() {
   const filterSel = document.getElementById('filterSubject');
 
   subjectsCache.forEach(s => {
-    sel.innerHTML +=
-      `<option value="${s.id}">${s.name}</option>`;
-    filterSel.innerHTML +=
-      `<option value="${s.id}">${s.name}</option>`;
+    sel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+    filterSel.innerHTML += `<option value="${s.id}">${s.name}</option>`;
   });
 }
 
@@ -61,13 +59,11 @@ async function loadQuestions() {
     questionsCache = [];
     snap.forEach(d => {
       const data = d.data();
-      // Skip test-only questions from main question bank
       if (!data.isTestOnly) {
         questionsCache.push({ id: d.id, ...data });
       }
     });
     filteredQuestions = [...questionsCache];
-
     loader.style.display = 'none';
     renderQuestions(filteredQuestions);
   } catch(e) {
@@ -78,45 +74,33 @@ async function loadQuestions() {
 
 // ── FILTER ──
 window.onSubjectFilterChange = function() {
-  const subjectId =
-    document.getElementById('filterSubject').value;
+  const subjectId = document.getElementById('filterSubject').value;
   const topicSelect = document.getElementById('filterTopic');
-
   topicSelect.innerHTML = '<option value="">All Topics</option>';
   if (subjectId) {
     topicsCache
       .filter(t => t.subjectId === subjectId)
       .forEach(t => {
-        topicSelect.innerHTML +=
-          `<option value="${t.id}">${t.name}</option>`;
+        topicSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
       });
   }
   filterQuestions();
 };
 
 window.filterQuestions = function() {
-  const subjectFilter =
-    document.getElementById('filterSubject').value;
-  const topicFilter =
-    document.getElementById('filterTopic').value;
-  const typeFilter =
-    document.getElementById('filterType').value;
-  const diffFilter =
-    document.getElementById('filterDifficulty').value;
+  const subjectFilter = document.getElementById('filterSubject').value;
+  const topicFilter = document.getElementById('filterTopic').value;
+  const typeFilter = document.getElementById('filterType').value;
+  const diffFilter = document.getElementById('filterDifficulty').value;
 
   filteredQuestions = questionsCache.filter(q => {
-    const matchSubject =
-      !subjectFilter || q.subjectId === subjectFilter;
-    const matchTopic =
-      !topicFilter || q.topicId === topicFilter;
-    const matchType =
-      !typeFilter || q.type === typeFilter;
-    const matchDiff =
-      !diffFilter || q.difficulty === diffFilter;
+    const matchSubject = !subjectFilter || q.subjectId === subjectFilter;
+    const matchTopic = !topicFilter || q.topicId === topicFilter;
+    const matchType = !typeFilter || q.type === typeFilter;
+    const matchDiff = !diffFilter || q.difficulty === diffFilter;
     return matchSubject && matchTopic && matchType && matchDiff;
   });
 
-  // Clear selection when filter changes
   if (bulkModeActive) {
     selectedQuestionIds.clear();
     updateSelectedCount();
@@ -145,19 +129,25 @@ function renderQuestions(questions) {
   }
 
   list.innerHTML = questions.map(q => {
-    const subject =
-      subjectsCache.find(s => s.id === q.subjectId);
-    const topic =
-      topicsCache.find(t => t.id === q.topicId);
+    const subject = subjectsCache.find(s => s.id === q.subjectId);
+    const topic = topicsCache.find(t => t.id === q.topicId);
     const typeBadge = q.type === 'PYQ'
       ? `<span class="badge badge-warning">PYQ ${q.pyqYear||''}</span>`
       : `<span class="badge badge-success">IMP</span>`;
-
     const diffBadge = q.difficulty === 'easy'
       ? `<span class="badge badge-success" style="font-size:10px;">Easy</span>`
       : q.difficulty === 'hard'
       ? `<span class="badge badge-danger" style="font-size:10px;">Hard</span>`
       : `<span class="badge badge-warning" style="font-size:10px;">Medium</span>`;
+
+    // Image badge — shown if question has any images
+    const hasImages = q.questionImage ||
+      (q.optionImages && q.optionImages.some(u => u));
+    const imageBadge = hasImages
+      ? `<span style="font-size:10px;background:#E0F2FE;
+           color:#0284C7;padding:2px 6px;border-radius:4px;
+           font-weight:600;">🖼️ IMG</span>`
+      : '';
 
     const checkbox = bulkModeActive ? `
       <input type="checkbox" class="question-select-cb"
@@ -178,16 +168,21 @@ function renderQuestions(questions) {
                         margin-bottom:6px;flex-wrap:wrap;">
               <p style="font-size:14px;font-weight:600;flex:1;
                          line-height:1.5;min-width:200px;">
-                ${q.questionText}
+                ${q.questionText || '(Image Question)'}
+                ${q.questionImage
+                  ? `<img src="${q.questionImage}"
+                       style="display:block;max-width:100%;
+                              max-height:80px;object-fit:contain;
+                              border-radius:6px;margin-top:6px;
+                              border:1px solid var(--border);" />` : ''}
               </p>
-              <div style="display:flex;gap:4px;flex-wrap:wrap;
-                          flex-shrink:0;">
+              <div style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0;">
                 ${typeBadge}
                 ${diffBadge}
+                ${imageBadge}
               </div>
             </div>
-            <div style="font-size:12px;color:var(--text-secondary);
-                        margin-bottom:8px;">
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">
               📚 ${subject ? subject.name : 'No subject'}
               ${topic ? ' → 📖 '+topic.name : ''}
               ${q.type === 'PYQ' && q.pyqExamName
@@ -195,20 +190,29 @@ function renderQuestions(questions) {
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;
                         gap:4px;margin-bottom:8px;">
-              ${q.options ? q.options.map((opt, i) => `
-                <div style="font-size:12px;padding:5px 8px;
-                            border-radius:6px;
-                  background:${i === q.correctOption
-                    ? '#DCFCE7' : '#F8FAFC'};
-                  color:${i === q.correctOption
-                    ? 'var(--success)'
-                    : 'var(--text-secondary)'};
-                  border:1px solid ${i === q.correctOption
-                    ? '#BBF7D0' : 'var(--border)'};">
-                  ${['A','B','C','D'][i]}. ${opt}
-                  ${i === q.correctOption ? ' ✓' : ''}
-                </div>
-              `).join('') : ''}
+              ${q.options ? q.options.map((opt, i) => {
+                const hasOptImg = q.optionImages && q.optionImages[i];
+                return `
+                  <div style="font-size:12px;padding:5px 8px;
+                              border-radius:6px;
+                    background:${i === q.correctOption ? '#DCFCE7' : '#F8FAFC'};
+                    color:${i === q.correctOption
+                      ? 'var(--success)' : 'var(--text-secondary)'};
+                    border:1px solid ${i === q.correctOption
+                      ? '#BBF7D0' : 'var(--border)'};">
+                    ${['A','B','C','D'][i]}.
+                    ${hasOptImg
+                      ? `<img src="${q.optionImages[i]}"
+                           style="max-height:40px;max-width:100%;
+                                  object-fit:contain;
+                                  border-radius:4px;
+                                  vertical-align:middle;
+                                  margin-left:4px;" />`
+                      : opt}
+                    ${i === q.correctOption ? ' ✓' : ''}
+                  </div>
+                `;
+              }).join('') : ''}
             </div>
             ${!bulkModeActive ? `
               <div style="display:flex;gap:6px;">
@@ -216,8 +220,9 @@ function renderQuestions(questions) {
                   class="btn btn-sm btn-outline">Edit</button>
                 <button onclick="deleteQuestion('${q.id}')"
                   class="btn btn-sm"
-                  style="background:#FEE2E2;color:#DC2626;
-                         border:none;">Delete</button>
+                  style="background:#FEE2E2;color:#DC2626;border:none;">
+                  Delete
+                </button>
               </div>
             ` : ''}
           </div>
@@ -238,8 +243,7 @@ window.toggleBulkMode = function() {
 
   btn.textContent = bulkModeActive ? '✕ Cancel Select' : '☑ Select';
   btn.style.background = bulkModeActive ? '#FEE2E2' : 'transparent';
-  btn.style.color =
-    bulkModeActive ? '#DC2626' : 'var(--primary)';
+  btn.style.color = bulkModeActive ? '#DC2626' : 'var(--primary)';
   bar.style.display = bulkModeActive ? 'flex' : 'none';
 
   renderQuestions(filteredQuestions);
@@ -254,29 +258,21 @@ window.toggleQuestionSelect = function(id, checkbox) {
   updateSelectedCount();
 };
 
-// Select all currently visible on screen
 window.selectAllVisible = function() {
-  filteredQuestions.forEach(q =>
-    selectedQuestionIds.add(q.id)
-  );
+  filteredQuestions.forEach(q => selectedQuestionIds.add(q.id));
   document.querySelectorAll('.question-select-cb').forEach(cb => {
     cb.checked = true;
   });
   updateSelectedCount();
 };
 
-// Select ALL filtered questions (even if not visible due to scroll)
 window.selectAllFiltered = function() {
-  filteredQuestions.forEach(q =>
-    selectedQuestionIds.add(q.id)
-  );
+  filteredQuestions.forEach(q => selectedQuestionIds.add(q.id));
   document.querySelectorAll('.question-select-cb').forEach(cb => {
     cb.checked = true;
   });
   updateSelectedCount();
-  showToast(
-    `${selectedQuestionIds.size} questions selected`, 'info'
-  );
+  showToast(`${selectedQuestionIds.size} questions selected`, 'info');
 };
 
 window.clearSelection = function() {
@@ -296,13 +292,8 @@ window.deleteSelectedQuestions = async function() {
     `⚠️ Delete ${selectedQuestionIds.size} questions permanently?\n\nThis cannot be undone.`
   )) return;
 
-  const deleteBtn = document.querySelector(
-    '#bulkDeleteBar button:last-child'
-  );
-  if (deleteBtn) {
-    deleteBtn.disabled = true;
-    deleteBtn.textContent = 'Deleting...';
-  }
+  const deleteBtn = document.querySelector('#bulkDeleteBar button:last-child');
+  if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.textContent = 'Deleting...'; }
 
   let deleted = 0;
   try {
@@ -337,6 +328,82 @@ window.deleteSelectedQuestions = async function() {
   }
 };
 
+// ── IMAGE FIELDS — injected dynamically into the form ──
+function ensureImageFields() {
+  if (document.getElementById('imageFieldsContainer')) return;
+
+  const saveBtn = document.getElementById('saveQBtn');
+  if (!saveBtn) return;
+
+  const container = document.createElement('div');
+  container.id = 'imageFieldsContainer';
+  container.style.cssText = 'margin-bottom:16px;';
+  container.innerHTML = `
+    <div style="padding:14px;background:#F0F9FF;
+                border-radius:10px;border:1px solid #BAE6FD;">
+      <p style="font-size:13px;font-weight:700;
+                color:#0284C7;margin-bottom:4px;">
+        🖼️ Image URLs
+        <span style="font-weight:400;font-size:11px;
+                     color:var(--text-secondary);margin-left:6px;">
+          (Optional — leave blank for text-only)
+        </span>
+      </p>
+      <p style="font-size:11px;color:var(--text-secondary);
+                margin-bottom:12px;line-height:1.5;">
+        Upload images to GitHub → assets/question-images/ folder → 
+        copy the raw URL → paste below.
+      </p>
+
+      <label style="font-size:12px;font-weight:600;
+                    display:block;margin-bottom:4px;">
+        Question Image URL
+      </label>
+      <input id="questionImageUrl" type="url"
+        placeholder="https://raw.githubusercontent.com/firstrank1993/nishchay-academy/main/assets/question-images/..."
+        style="width:100%;padding:10px 12px;
+               border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:13px;
+               font-family:Inter,sans-serif;
+               box-sizing:border-box;margin-bottom:12px;" />
+
+      ${['A','B','C','D'].map((l,i) => `
+        <label style="font-size:12px;font-weight:600;
+                      display:block;margin-bottom:4px;">
+          Option ${l} Image URL
+        </label>
+        <input id="optImgUrl${i}" type="url"
+          placeholder="https://raw.githubusercontent.com/firstrank1993/nishchay-academy/main/assets/question-images/..."
+          style="width:100%;padding:10px 12px;
+                 border:1.5px solid var(--border);
+                 border-radius:var(--radius-sm);font-size:13px;
+                 font-family:Inter,sans-serif;
+                 box-sizing:border-box;margin-bottom:10px;" />
+      `).join('')}
+    </div>
+  `;
+
+  saveBtn.parentNode.insertBefore(container, saveBtn);
+}
+
+function clearImageFields() {
+  const qImg = document.getElementById('questionImageUrl');
+  if (qImg) qImg.value = '';
+  [0,1,2,3].forEach(i => {
+    const el = document.getElementById(`optImgUrl${i}`);
+    if (el) el.value = '';
+  });
+}
+
+function populateImageFields(q) {
+  const qImg = document.getElementById('questionImageUrl');
+  if (qImg) qImg.value = q.questionImage || '';
+  [0,1,2,3].forEach(i => {
+    const el = document.getElementById(`optImgUrl${i}`);
+    if (el) el.value = (q.optionImages && q.optionImages[i]) ? q.optionImages[i] : '';
+  });
+}
+
 // ── ADD/EDIT FORM ──
 window.showAddForm = function() {
   editingQId = null;
@@ -356,7 +423,11 @@ window.showAddForm = function() {
   document.getElementById('difficulty').value = 'medium';
   setCorrect(0);
   selectType('PYQ');
+
   document.getElementById('questionForm').style.display = 'block';
+  ensureImageFields();
+  clearImageFields();
+
   document.getElementById('questionForm').scrollIntoView({
     behavior: 'smooth'
   });
@@ -385,25 +456,20 @@ window.setCorrect = function(index) {
   selectedCorrect = index;
   [0,1,2,3].forEach(i => {
     const btn = document.getElementById(`opt${i}btn`);
-    btn.style.background =
-      i === index ? 'var(--success)' : 'transparent';
-    btn.style.color =
-      i === index ? 'white' : 'var(--primary)';
-    btn.style.border =
-      i === index ? 'none' : '1.5px solid var(--primary)';
+    btn.style.background = i === index ? 'var(--success)' : 'transparent';
+    btn.style.color = i === index ? 'white' : 'var(--primary)';
+    btn.style.border = i === index ? 'none' : '1.5px solid var(--primary)';
   });
 };
 
 window.loadTopicsForSubject = function() {
-  const subjectId =
-    document.getElementById('qSubjectSelect').value;
+  const subjectId = document.getElementById('qSubjectSelect').value;
   const topicSelect = document.getElementById('qTopicSelect');
   topicSelect.innerHTML = '<option value="">Select Topic</option>';
   topicsCache
     .filter(t => t.subjectId === subjectId)
     .forEach(t => {
-      topicSelect.innerHTML +=
-        `<option value="${t.id}">${t.name}</option>`;
+      topicSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
     });
 };
 
@@ -418,28 +484,24 @@ window.editQuestion = function(id) {
   document.getElementById('opt1').value = q.options[1] || '';
   document.getElementById('opt2').value = q.options[2] || '';
   document.getElementById('opt3').value = q.options[3] || '';
-  document.getElementById('explanation').value =
-    q.explanation || '';
-  document.getElementById('difficulty').value =
-    q.difficulty || 'medium';
-  document.getElementById('qSubjectSelect').value =
-    q.subjectId || '';
+  document.getElementById('explanation').value = q.explanation || '';
+  document.getElementById('difficulty').value = q.difficulty || 'medium';
+  document.getElementById('qSubjectSelect').value = q.subjectId || '';
   loadTopicsForSubject();
-  document.getElementById('qTopicSelect').value =
-    q.topicId || '';
+  document.getElementById('qTopicSelect').value = q.topicId || '';
   selectType(q.type || 'PYQ');
   setCorrect(q.correctOption || 0);
 
   if (q.type === 'PYQ') {
-    document.getElementById('pyqExamName').value =
-      q.pyqExamName || '';
-    document.getElementById('pyqYear').value =
-      q.pyqYear || '';
-    document.getElementById('pyqExamBodyName').value =
-      q.pyqExamBodyName || '';
+    document.getElementById('pyqExamName').value = q.pyqExamName || '';
+    document.getElementById('pyqYear').value = q.pyqYear || '';
+    document.getElementById('pyqExamBodyName').value = q.pyqExamBodyName || '';
   }
 
   document.getElementById('questionForm').style.display = 'block';
+  ensureImageFields();
+  populateImageFields(q);
+
   document.getElementById('questionForm').scrollIntoView({
     behavior: 'smooth'
   });
@@ -463,29 +525,49 @@ window.saveQuestion = async function() {
   const difficulty =
     document.getElementById('difficulty').value;
 
-  if (!questionText) {
-    showToast('Enter question text', 'error'); return;
+  // Image fields (optional)
+  const questionImageUrl =
+    (document.getElementById('questionImageUrl')?.value || '').trim();
+  const optionImageUrls = [0,1,2,3].map(i =>
+    (document.getElementById(`optImgUrl${i}`)?.value || '').trim()
+  );
+
+  // Validation — allow empty questionText if there's a question image
+  if (!questionText && !questionImageUrl) {
+    showToast('Enter question text or add a question image', 'error');
+    return;
   }
-  if (!subjectId) {
-    showToast('Select a subject', 'error'); return;
-  }
-  if (!topicId) {
-    showToast('Select a topic', 'error'); return;
-  }
-  if (options.some(o => !o)) {
-    showToast('Fill all 4 options', 'error'); return;
+  if (!subjectId) { showToast('Select a subject', 'error'); return; }
+  if (!topicId) { showToast('Select a topic', 'error'); return; }
+
+  // Allow empty options only if they have images
+  const optionsValid = options.every((opt, i) =>
+    opt !== '' || (optionImageUrls[i] !== '')
+  );
+  if (!optionsValid) {
+    showToast('Fill all 4 options (text or image URL)', 'error');
+    return;
   }
 
   const btn = document.getElementById('saveQBtn');
   btn.disabled = true; btn.textContent = 'Saving...';
 
   const data = {
-    questionText, options,
+    questionText,
+    options,
     correctOption: selectedCorrect,
     subjectId, topicId,
     type: selectedType,
     difficulty, explanation,
   };
+
+  // Add image fields only if they have values
+  if (questionImageUrl) {
+    data.questionImage = questionImageUrl;
+  }
+  if (optionImageUrls.some(u => u !== '')) {
+    data.optionImages = optionImageUrls;
+  }
 
   if (selectedType === 'PYQ') {
     data.pyqExamName =
@@ -528,16 +610,14 @@ window.deleteQuestion = async function(id) {
 
 // ── BULK UPLOAD ──
 window.showBulkUpload = function() {
-  document.getElementById('bulkUploadSection').style.display =
-    'block';
+  document.getElementById('bulkUploadSection').style.display = 'block';
   document.getElementById('bulkUploadSection').scrollIntoView({
     behavior: 'smooth'
   });
 };
 
 window.hideBulkUpload = function() {
-  document.getElementById('bulkUploadSection').style.display =
-    'none';
+  document.getElementById('bulkUploadSection').style.display = 'none';
 };
 
 window.downloadTemplate = function() {
@@ -553,7 +633,13 @@ window.downloadTemplate = function() {
     'Explanation',
     'PYQ Exam Name',
     'PYQ Year',
-    'PYQ Exam Body'
+    'PYQ Exam Body',
+    // ── NEW: Image URL columns ──
+    'Question Image URL (optional)',
+    'Option A Image URL (optional)',
+    'Option B Image URL (optional)',
+    'Option C Image URL (optional)',
+    'Option D Image URL (optional)'
   ];
   const sampleRow = [
     'What is Article 14?',
@@ -566,10 +652,12 @@ window.downloadTemplate = function() {
     'મૂળભૂત અધિકારો',
     'medium',
     'Article 14 deals with Right to Equality',
-    'Talati', '2022', 'GPSSB'
+    'Talati', '2022', 'GPSSB',
+    // Image URL columns — leave blank for text questions
+    '', '', '', '', ''
   ];
   const ws = XLSX.utils.aoa_to_sheet([headers, sampleRow]);
-  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+  ws['!cols'] = headers.map(() => ({ wch: 22 }));
   XLSX.utils.book_append_sheet(wb, ws, 'Questions');
   XLSX.writeFile(wb, 'nishchay_questions_template.xlsx');
   showToast('Template downloaded!', 'success');
@@ -599,34 +687,36 @@ window.handleExcelUpload = async function(event) {
       return;
     }
 
-    status.textContent =
-      `Found ${dataRows.length} questions. Uploading...`;
+    status.textContent = `Found ${dataRows.length} questions. Uploading...`;
 
     let success = 0; let failed = 0;
 
     for (const row of dataRows) {
       try {
-        const questionText = String(row[0]||'').trim();
-        const optA = String(row[1]||'').trim();
-        const optB = String(row[2]||'').trim();
-        const optC = String(row[3]||'').trim();
-        const optD = String(row[4]||'').trim();
-        const correctLetter =
-          String(row[5]||'A').trim().toUpperCase();
-        const type =
-          String(row[6]||'IMP').trim().toUpperCase();
-        const subjectName = String(row[7]||'').trim();
-        const topicName = String(row[8]||'').trim();
-        const difficulty =
-          String(row[9]||'medium').trim().toLowerCase();
-        const explanation = String(row[10]||'').trim();
-        const pyqExamName = String(row[11]||'').trim();
-        const pyqYear = String(row[12]||'').trim();
+        const questionText    = String(row[0]||'').trim();
+        const optA            = String(row[1]||'').trim();
+        const optB            = String(row[2]||'').trim();
+        const optC            = String(row[3]||'').trim();
+        const optD            = String(row[4]||'').trim();
+        const correctLetter   = String(row[5]||'A').trim().toUpperCase();
+        const type            = String(row[6]||'IMP').trim().toUpperCase();
+        const subjectName     = String(row[7]||'').trim();
+        const topicName       = String(row[8]||'').trim();
+        const difficulty      = String(row[9]||'medium').trim().toLowerCase();
+        const explanation     = String(row[10]||'').trim();
+        const pyqExamName     = String(row[11]||'').trim();
+        const pyqYear         = String(row[12]||'').trim();
         const pyqExamBodyName = String(row[13]||'').trim();
+        // ── NEW: Image URL columns ──
+        const questionImageUrl  = String(row[14]||'').trim();
+        const optAImageUrl      = String(row[15]||'').trim();
+        const optBImageUrl      = String(row[16]||'').trim();
+        const optCImageUrl      = String(row[17]||'').trim();
+        const optDImageUrl      = String(row[18]||'').trim();
 
-        if (!questionText || !optA || !optB || !optC || !optD) {
-          failed++; continue;
-        }
+        // Allow empty questionText if questionImageUrl is provided
+        if (!questionText && !questionImageUrl) { failed++; continue; }
+        if (!optA && !optAImageUrl) { failed++; continue; }
 
         const subject = subjectsCache.find(s =>
           s.name.toLowerCase() === subjectName.toLowerCase()
@@ -659,12 +749,20 @@ window.handleExcelUpload = async function(event) {
           qData.pyqExamBodyName = pyqExamBodyName;
         }
 
+        // Add image fields only if they have values
+        if (questionImageUrl) {
+          qData.questionImage = questionImageUrl;
+        }
+        const optionImages = [optAImageUrl, optBImageUrl, optCImageUrl, optDImageUrl];
+        if (optionImages.some(u => u !== '')) {
+          qData.optionImages = optionImages;
+        }
+
         await addDoc(collection(db, 'questions'), qData);
         success++;
 
         if (success % 5 === 0) {
-          status.textContent =
-            `Uploading... ${success} done so far`;
+          status.textContent = `Uploading... ${success} done so far`;
         }
 
       } catch(e) { failed++; console.error('Row error:', e); }
@@ -672,7 +770,8 @@ window.handleExcelUpload = async function(event) {
 
     status.style.background = '#DCFCE7';
     status.style.color = 'var(--success)';
-    status.textContent = `✅ Done! ${success} uploaded. ${failed > 0 ? failed+' failed.' : ''}`;
+    status.textContent =
+      `✅ Done! ${success} uploaded. ${failed > 0 ? failed+' failed.' : ''}`;
 
     await loadQuestions();
     filterQuestions();
@@ -697,3 +796,4 @@ window.showToast = function(message, type = 'info') {
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 };
+

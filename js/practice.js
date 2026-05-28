@@ -26,15 +26,12 @@ let topicsCache = [];
 
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
-  if (user) {
-    await loadBookmarks(user.uid);
-  }
+  if (user) { await loadBookmarks(user.uid); }
 });
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadSubjects();
   await loadTopicsCache();
-
   if (topicIdParam) {
     document.getElementById('modeSelector').style.display = 'none';
     await loadQuestions();
@@ -46,15 +43,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
-// ── LOAD DATA ──
 async function loadSubjects() {
   try {
     const snap = await getDocs(collection(db, 'subjects'));
     const sel = document.getElementById('subjectFilter');
-    snap.forEach(d => {
-      sel.innerHTML +=
-        `<option value="${d.id}">${d.data().name}</option>`;
-    });
+    snap.forEach(d => { sel.innerHTML += `<option value="${d.id}">${d.data().name}</option>`; });
   } catch(e) { console.error(e); }
 }
 
@@ -62,25 +55,18 @@ async function loadTopicsCache() {
   try {
     const snap = await getDocs(collection(db, 'topics'));
     topicsCache = [];
-    snap.forEach(d =>
-      topicsCache.push({ id: d.id, ...d.data() })
-    );
+    snap.forEach(d => topicsCache.push({ id: d.id, ...d.data() }));
   } catch(e) { console.error(e); }
 }
 
 window.onSubjectFilterChange = function() {
-  const subjectId =
-    document.getElementById('subjectFilter').value;
+  const subjectId = document.getElementById('subjectFilter').value;
   const topicSelect = document.getElementById('topicFilter');
-
   topicSelect.innerHTML = '<option value="">All Topics</option>';
   if (subjectId) {
-    topicsCache
-      .filter(t => t.subjectId === subjectId)
-      .forEach(t => {
-        topicSelect.innerHTML +=
-          `<option value="${t.id}">${t.name}</option>`;
-      });
+    topicsCache.filter(t => t.subjectId === subjectId).forEach(t => {
+      topicSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+    });
   }
   loadPracticeQuestions();
 };
@@ -89,16 +75,12 @@ async function loadQuestions() {
   document.getElementById('practiceLoader').style.display = 'block';
   document.getElementById('practiceArea').style.display = 'none';
   document.getElementById('practiceEmpty').style.display = 'none';
-
   try {
     const snap = await getDocs(collection(db, 'questions'));
     allQuestions = [];
     snap.forEach(d => {
       const data = d.data();
-      // Skip test-only questions in practice
-      if (!data.isTestOnly) {
-        allQuestions.push({ id: d.id, ...data });
-      }
+      if (!data.isTestOnly) { allQuestions.push({ id: d.id, ...data }); }
     });
     document.getElementById('practiceLoader').style.display = 'none';
   } catch(e) {
@@ -107,245 +89,153 @@ async function loadQuestions() {
   }
 }
 
-// ── BOOKMARKS ──
 async function loadBookmarks(userId) {
   try {
-    const snap = await getDocs(
-      collection(db, 'users', userId, 'bookmarks')
-    );
+    const snap = await getDocs(collection(db, 'users', userId, 'bookmarks'));
     bookmarkedIds = new Set();
     snap.forEach(d => bookmarkedIds.add(d.id));
   } catch(e) { console.error(e); }
 }
 
 window.toggleBookmark = async function() {
-  if (!currentUser) {
-    showToast('Please login to bookmark questions', 'error');
-    return;
-  }
-
+  if (!currentUser) { showToast('Please login to bookmark questions', 'error'); return; }
   const q = currentQuestions[currentIndex];
   if (!q) return;
-
-  const bookmarkRef = doc(
-    db, 'users', currentUser.uid, 'bookmarks', q.id
-  );
-
+  const bookmarkRef = doc(db, 'users', currentUser.uid, 'bookmarks', q.id);
   try {
     if (bookmarkedIds.has(q.id)) {
-      // Remove bookmark
       await deleteDoc(bookmarkRef);
       bookmarkedIds.delete(q.id);
       document.getElementById('bookmarkBtn').style.opacity = '0.4';
       showToast('Bookmark removed', 'info');
     } else {
-      // Add bookmark
-      await setDoc(bookmarkRef, {
-        questionId: q.id,
-        topicId: q.topicId || '',
-        subjectId: q.subjectId || '',
-        createdAt: serverTimestamp()
-      });
+      await setDoc(bookmarkRef, { questionId: q.id, topicId: q.topicId || '', subjectId: q.subjectId || '', createdAt: serverTimestamp() });
       bookmarkedIds.add(q.id);
       document.getElementById('bookmarkBtn').style.opacity = '1';
       showToast('Question bookmarked! 🔖', 'success');
     }
-  } catch(e) {
-    showToast('Error saving bookmark', 'error');
-    console.error(e);
-  }
+  } catch(e) { showToast('Error saving bookmark', 'error'); console.error(e); }
 };
 
 window.loadBookmarkedQuestions = async function() {
-  if (!currentUser) {
-    showToast('Please login to see bookmarks', 'error');
-    return;
-  }
-
+  if (!currentUser) { showToast('Please login to see bookmarks', 'error'); return; }
   document.getElementById('practiceLoader').style.display = 'block';
   document.getElementById('modeSelector').style.display = 'none';
   document.getElementById('practiceEmpty').style.display = 'none';
-
   try {
-    const snap = await getDocs(
-      collection(db, 'users', currentUser.uid, 'bookmarks')
-    );
-
+    const snap = await getDocs(collection(db, 'users', currentUser.uid, 'bookmarks'));
     if (snap.empty) {
-      document.getElementById('practiceLoader').style.display =
-        'none';
-      document.getElementById('practiceEmpty').style.display =
-        'block';
-      document.getElementById('practiceEmpty')
-        .querySelector('h3').textContent = 'No Bookmarks Yet';
-      document.getElementById('practiceEmpty')
-        .querySelector('p').textContent =
-        'Bookmark questions during practice to see them here.';
+      document.getElementById('practiceLoader').style.display = 'none';
+      document.getElementById('practiceEmpty').style.display = 'block';
+      document.getElementById('practiceEmpty').querySelector('h3').textContent = 'No Bookmarks Yet';
+      document.getElementById('practiceEmpty').querySelector('p').textContent = 'Bookmark questions during practice to see them here.';
       return;
     }
-
     const bookmarkIds = [];
     snap.forEach(d => bookmarkIds.push(d.id));
-
-    // Load those specific questions
     isBookmarkMode = true;
-    currentQuestions = allQuestions.filter(q =>
-      bookmarkIds.includes(q.id)
-    );
-
+    currentQuestions = allQuestions.filter(q => bookmarkIds.includes(q.id));
     document.getElementById('practiceLoader').style.display = 'none';
-
-    if (currentQuestions.length === 0) {
-      document.getElementById('practiceEmpty').style.display =
-        'block';
-      return;
-    }
-
-    // Shuffle
-    currentQuestions = currentQuestions.sort(
-      () => Math.random() - 0.5
-    );
-
-    currentIndex = 0;
-    score = 0;
-
+    if (currentQuestions.length === 0) { document.getElementById('practiceEmpty').style.display = 'block'; return; }
+    currentQuestions = currentQuestions.sort(() => Math.random() - 0.5);
+    currentIndex = 0; score = 0;
     document.getElementById('practiceEmpty').style.display = 'none';
     document.getElementById('practiceSummary').style.display = 'none';
     document.getElementById('practiceArea').style.display = 'block';
-    document.getElementById('practiceMode').textContent =
-      `🔖 Bookmarked Questions (${currentQuestions.length})`;
-
+    document.getElementById('practiceMode').textContent = `🔖 Bookmarked Questions (${currentQuestions.length})`;
     showQuestion();
-
-  } catch(e) {
-    document.getElementById('practiceLoader').style.display = 'none';
-    showToast('Error loading bookmarks', 'error');
-    console.error(e);
-  }
+  } catch(e) { document.getElementById('practiceLoader').style.display = 'none'; showToast('Error loading bookmarks', 'error'); console.error(e); }
 };
 
-// ── PRACTICE TYPE ──
 window.setPracticeType = function(type) {
   practiceType = type;
-
   ['PYQ','IMP','ALL'].forEach(t => {
     const el = document.getElementById(`mode${t}`);
     if (!el) return;
-    el.style.border = t === type
-      ? '2px solid var(--primary)'
-      : '1px solid var(--border)';
+    el.style.border = t === type ? '2px solid var(--primary)' : '1px solid var(--border)';
   });
-
   startPractice();
 };
 
 function startPractice() {
   isBookmarkMode = false;
-  const subjectFilter =
-    document.getElementById('subjectFilter')?.value || '';
-  const topicFilter =
-    document.getElementById('topicFilter')?.value || '';
-
+  const subjectFilter = document.getElementById('subjectFilter')?.value || '';
+  const topicFilter = document.getElementById('topicFilter')?.value || '';
   currentQuestions = allQuestions.filter(q => {
-    const matchType =
-      practiceType === 'ALL' || q.type === practiceType;
-    const matchTopic =
-      !topicIdParam || q.topicId === topicIdParam;
-    const matchSubject =
-      !subjectFilter || q.subjectId === subjectFilter;
-    const matchTopicFilter =
-      !topicFilter || q.topicId === topicFilter;
-    return matchType && matchTopic &&
-           matchSubject && matchTopicFilter;
+    const matchType = practiceType === 'ALL' || q.type === practiceType;
+    const matchTopic = !topicIdParam || q.topicId === topicIdParam;
+    const matchSubject = !subjectFilter || q.subjectId === subjectFilter;
+    const matchTopicFilter = !topicFilter || q.topicId === topicFilter;
+    return matchType && matchTopic && matchSubject && matchTopicFilter;
   });
-
-  // Shuffle
-  currentQuestions = currentQuestions.sort(
-    () => Math.random() - 0.5
-  );
-
+  currentQuestions = currentQuestions.sort(() => Math.random() - 0.5);
   if (currentQuestions.length === 0) {
     document.getElementById('practiceArea').style.display = 'none';
     document.getElementById('practiceEmpty').style.display = 'block';
     return;
   }
-
-  currentIndex = 0;
-  score = 0;
-
+  currentIndex = 0; score = 0;
   document.getElementById('practiceEmpty').style.display = 'none';
   document.getElementById('practiceSummary').style.display = 'none';
   document.getElementById('practiceArea').style.display = 'block';
-
-  const modeLabels = {
-    'PYQ': '📝 PYQ Practice',
-    'IMP': '⭐ IMP MCQ Practice',
-    'ALL': '🎯 Mixed Practice'
-  };
-  document.getElementById('practiceMode').textContent =
-    modeLabels[practiceType] || 'Practice';
-
+  const modeLabels = { 'PYQ': '📝 PYQ Practice', 'IMP': '⭐ IMP MCQ Practice', 'ALL': '🎯 Mixed Practice' };
+  document.getElementById('practiceMode').textContent = modeLabels[practiceType] || 'Practice';
   showQuestion();
 }
 
-window.loadPracticeQuestions = function() {
-  if (!isBookmarkMode) startPractice();
-};
+window.loadPracticeQuestions = function() { if (!isBookmarkMode) startPractice(); };
 
-// ── SHOW QUESTION ──
+// ── SHOW QUESTION (image support) ──
 function showQuestion() {
   const q = currentQuestions[currentIndex];
   const total = currentQuestions.length;
 
-  document.getElementById('progressText').textContent =
-    `Question ${currentIndex+1} of ${total}`;
-  document.getElementById('scoreText').textContent =
-    `Score: ${score}`;
-  document.getElementById('progressBar').style.width =
-    `${((currentIndex) / total) * 100}%`;
+  document.getElementById('progressText').textContent = `Question ${currentIndex+1} of ${total}`;
+  document.getElementById('scoreText').textContent = `Score: ${score}`;
+  document.getElementById('progressBar').style.width = `${((currentIndex) / total) * 100}%`;
 
-  // Bookmark button state
   const bookmarkBtn = document.getElementById('bookmarkBtn');
   if (bookmarkBtn) {
-    bookmarkBtn.style.opacity =
-      bookmarkedIds.has(q.id) ? '1' : '0.4';
-    bookmarkBtn.title = bookmarkedIds.has(q.id)
-      ? 'Remove bookmark' : 'Bookmark this question';
+    bookmarkBtn.style.opacity = bookmarkedIds.has(q.id) ? '1' : '0.4';
+    bookmarkBtn.title = bookmarkedIds.has(q.id) ? 'Remove bookmark' : 'Bookmark this question';
   }
 
-  // PYQ Badge
   if (q.type === 'PYQ' && q.pyqExamName) {
     document.getElementById('pyqBadge').style.display = 'block';
-    document.getElementById('pyqBadgeText').textContent =
-      `${q.pyqExamName} ${q.pyqYear||''} — ${q.pyqExamBodyName||''}`;
+    document.getElementById('pyqBadgeText').textContent = `${q.pyqExamName} ${q.pyqYear||''} — ${q.pyqExamBodyName||''}`;
   } else {
     document.getElementById('pyqBadge').style.display = 'none';
   }
 
-  document.getElementById('questionText').textContent =
-    q.questionText;
+  document.getElementById('questionText').textContent = q.questionText || '';
+
+  // Question image
+  let qImgEl = document.getElementById('practiceQuestionImg');
+  if (!qImgEl) {
+    qImgEl = document.createElement('img');
+    qImgEl.id = 'practiceQuestionImg';
+    qImgEl.alt = 'Question Image';
+    qImgEl.style.cssText = `width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:10px;margin-bottom:4px;border:1px solid var(--border);display:block;`;
+    qImgEl.onerror = function() { this.style.display = 'none'; };
+    document.getElementById('questionText').insertAdjacentElement('afterend', qImgEl);
+  }
+  if (q.questionImage) { qImgEl.src = q.questionImage; qImgEl.style.display = 'block'; }
+  else { qImgEl.style.display = 'none'; }
 
   const optLabels = ['A','B','C','D'];
   const container = document.getElementById('optionsContainer');
   container.innerHTML = '';
 
   q.options.forEach((opt, i) => {
+    const hasOptImage = q.optionImages && q.optionImages[i];
     const btn = document.createElement('button');
-    btn.style.cssText = `
-      width:100%; padding:12px 14px; border-radius:10px;
-      border:1.5px solid var(--border); background:white;
-      font-size:14px; text-align:left; cursor:pointer;
-      font-family:Inter,sans-serif; transition:all 0.2s;
-      display:flex; align-items:center; gap:10px;
-    `;
-    btn.innerHTML = `
-      <span style="width:28px;height:28px;border-radius:50%;
-        background:var(--primary-light);color:var(--primary);
-        font-weight:700;font-size:13px;
-        display:flex;align-items:center;justify-content:center;
-        flex-shrink:0;">${optLabels[i]}</span>
-      <span>${opt}</span>
-    `;
+    btn.style.cssText = `width:100%;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:white;font-size:14px;text-align:left;cursor:pointer;font-family:Inter,sans-serif;transition:all 0.2s;display:flex;align-items:center;gap:10px;`;
+    const labelHTML = `<span style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-weight:700;font-size:13px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">${optLabels[i]}</span>`;
+    if (hasOptImage) {
+      btn.innerHTML = `${labelHTML}<img src="${q.optionImages[i]}" alt="Option ${optLabels[i]}" style="max-width:calc(100% - 50px);max-height:120px;object-fit:contain;border-radius:6px;pointer-events:none;" />`;
+    } else {
+      btn.innerHTML = `${labelHTML}<span>${opt}</span>`;
+    }
     btn.onclick = () => selectOption(i, btn);
     container.appendChild(btn);
   });
@@ -356,79 +246,45 @@ function showQuestion() {
 
 function selectOption(selectedIndex, btn) {
   const q = currentQuestions[currentIndex];
-  const buttons =
-    document.getElementById('optionsContainer').children;
+  const buttons = document.getElementById('optionsContainer').children;
   const isCorrect = selectedIndex === q.correctOption;
-
   if (isCorrect) score++;
 
-  // Color all options
   Array.from(buttons).forEach((b, i) => {
-    b.style.cursor = 'default';
-    b.onclick = null;
-    if (i === q.correctOption) {
-      b.style.background = '#DCFCE7';
-      b.style.borderColor = '#16A34A';
-    } else if (i === selectedIndex && !isCorrect) {
-      b.style.background = '#FEE2E2';
-      b.style.borderColor = '#DC2626';
-    }
+    b.style.cursor = 'default'; b.onclick = null;
+    if (i === q.correctOption) { b.style.background = '#DCFCE7'; b.style.borderColor = '#16A34A'; b.style.borderWidth = '2px'; }
+    else if (i === selectedIndex && !isCorrect) { b.style.background = '#FEE2E2'; b.style.borderColor = '#DC2626'; b.style.borderWidth = '2px'; }
   });
 
-  // Show explanation
   if (q.explanation) {
     const expDiv = document.createElement('div');
-    expDiv.style.cssText = `
-      margin-top:12px; padding:12px; background:#EFF6FF;
-      border-radius:10px; font-size:13px; color:var(--primary);
-      border-left:3px solid var(--primary); line-height:1.6;
-    `;
-    expDiv.innerHTML =
-      `<strong>💡 Explanation:</strong> ${q.explanation}`;
-    document.getElementById('optionsContainer')
-      .appendChild(expDiv);
+    expDiv.style.cssText = `margin-top:12px;padding:12px;background:#EFF6FF;border-radius:10px;font-size:13px;color:var(--primary);border-left:3px solid var(--primary);line-height:1.6;`;
+    expDiv.innerHTML = `<strong>💡 Explanation:</strong> ${q.explanation}`;
+    document.getElementById('optionsContainer').appendChild(expDiv);
   }
 
-  document.getElementById('scoreText').textContent =
-    `Score: ${score}`;
-
-  if (currentIndex < currentQuestions.length - 1) {
-    document.getElementById('nextBtn').style.display = 'block';
-  } else {
-    document.getElementById('finishBtn').style.display = 'block';
-  }
+  document.getElementById('scoreText').textContent = `Score: ${score}`;
+  if (currentIndex < currentQuestions.length - 1) { document.getElementById('nextBtn').style.display = 'block'; }
+  else { document.getElementById('finishBtn').style.display = 'block'; }
 }
 
-window.nextQuestion = function() {
-  currentIndex++;
-  showQuestion();
-};
+window.nextQuestion = function() { currentIndex++; showQuestion(); };
 
 window.finishPractice = function() {
   const total = currentQuestions.length;
-  const accuracy = total > 0
-    ? Math.round((score / total) * 100) : 0;
-
+  const accuracy = total > 0 ? Math.round((score / total) * 100) : 0;
   document.getElementById('practiceArea').style.display = 'none';
   document.getElementById('practiceSummary').style.display = 'block';
-
   document.getElementById('summaryCorrect').textContent = score;
-  document.getElementById('summaryWrong').textContent =
-    total - score;
-  document.getElementById('summaryAccuracy').textContent =
-    `${accuracy}%`;
+  document.getElementById('summaryWrong').textContent = total - score;
+  document.getElementById('summaryAccuracy').textContent = `${accuracy}%`;
   document.getElementById('summaryTotal').textContent = total;
-  document.getElementById('summaryText').textContent =
-    `You scored ${score} out of ${total} (${accuracy}% accuracy)`;
+  document.getElementById('summaryText').textContent = `You scored ${score} out of ${total} (${accuracy}% accuracy)`;
 };
 
 window.restartPractice = function() {
   document.getElementById('practiceSummary').style.display = 'none';
-  if (isBookmarkMode) {
-    loadBookmarkedQuestions();
-  } else {
-    startPractice();
-  }
+  if (isBookmarkMode) { loadBookmarkedQuestions(); } else { startPractice(); }
 };
 
 window.exitPractice = function() {
@@ -448,3 +304,4 @@ window.showToast = function(message, type = 'info') {
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 };
+

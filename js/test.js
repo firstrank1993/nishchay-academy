@@ -16,7 +16,7 @@ let testData = null;
 let testSections = [];
 let allTestQuestions = [];
 let userAnswers = {};       // -1 = unattempted, -2 = skipped (5th option)
-let reviewFlags = new Set(); // question IDs marked for review
+let reviewFlags = new Set();
 let currentQIndex = 0;
 let timerInterval = null;
 let timeLeft = 0;
@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 // ── LOAD ALL TESTS ──
 async function loadAllTests() {
   const loader = document.getElementById('testsLoader');
-  const list = document.getElementById('testsList');
-  const empty = document.getElementById('testsEmpty');
+  const list   = document.getElementById('testsList');
+  const empty  = document.getElementById('testsEmpty');
 
   try {
     const snap = await getDocs(collection(db, 'tests'));
@@ -49,8 +49,8 @@ async function loadAllTests() {
     snap.forEach(d => {
       const data = d.data();
       const now = new Date();
-      const isActive = data.isActive;
-      const notExpired = !data.expiresAt ||
+      const isActive    = data.isActive;
+      const notExpired  = !data.expiresAt ||
         new Date(data.expiresAt.seconds * 1000) > now;
       const isActivated = !data.activateAt ||
         new Date(data.activateAt.seconds * 1000) <= now;
@@ -147,12 +147,11 @@ async function loadTestIntro(testId) {
     let totalQ = 0;
     testSections.forEach(s => totalQ += (s.questionIds?.length || 0));
 
-    document.getElementById('introTitle').textContent = testData.title;
-    document.getElementById('testTitle').textContent = testData.title;
-    document.getElementById('introDuration').textContent =
-      `${testData.duration} minutes`;
+    document.getElementById('introTitle').textContent     = testData.title;
+    document.getElementById('testTitle').textContent      = testData.title;
+    document.getElementById('introDuration').textContent  = `${testData.duration} minutes`;
     document.getElementById('introQuestions').textContent = totalQ;
-    document.getElementById('introMarks').textContent = testData.totalMarks;
+    document.getElementById('introMarks').textContent     = testData.totalMarks;
 
     const hasNegative = testSections.some(s => s.negativeMarks > 0);
     document.getElementById('introNegative').textContent =
@@ -181,9 +180,9 @@ window.startTest = async function() {
           allTestQuestions.push({
             id: qSnap.id,
             ...qSnap.data(),
-            sectionId: section.id,
+            sectionId:    section.id,
             sectionTitle: section.title,
-            marksPerQ: section.marksPerQ || 1,
+            marksPerQ:    section.marksPerQ    || 1,
             negativeMarks: section.negativeMarks || 0
           });
         }
@@ -197,20 +196,20 @@ window.startTest = async function() {
       return;
     }
 
-    userAnswers = {};
-    questionTimings = {};
-    reviewFlags = new Set();
-    currentQIndex = 0;
+    userAnswers      = {};
+    questionTimings  = {};
+    reviewFlags      = new Set();
+    currentQIndex    = 0;
     questionStartTime = new Date();
-    testStartTime = new Date();
+    testStartTime    = new Date();
 
     timeLeft = testData.duration * 60;
     startTimer();
 
     document.getElementById('testIntroSection').style.display = 'none';
-    document.getElementById('testArea').style.display = 'block';
-    document.getElementById('timerDisplay').style.display = 'block';
-    document.getElementById('bottomNav').style.display = 'none';
+    document.getElementById('testArea').style.display         = 'block';
+    document.getElementById('timerDisplay').style.display     = 'block';
+    document.getElementById('bottomNav').style.display        = 'none';
 
     buildQuestionNav();
     showTestQuestion();
@@ -238,8 +237,8 @@ function startTimer() {
 }
 
 function updateTimerDisplay() {
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
+  const mins  = Math.floor(timeLeft / 60);
+  const secs  = timeLeft % 60;
   const display =
     `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
   document.getElementById('timerDisplay').textContent = display;
@@ -266,45 +265,40 @@ function buildQuestionNav() {
 function updateNavButton(index) {
   const btn = document.getElementById(`navBtn${index}`);
   if (!btn) return;
-  const q = allTestQuestions[index];
-  const answer = userAnswers[q.id];
+  const q        = allTestQuestions[index];
+  const answer   = userAnswers[q.id];
   const isReview = reviewFlags.has(q.id);
 
   if (isReview) {
-    // Mark for review — yellow
-    btn.style.background = '#FEF3C7';
-    btn.style.borderColor = '#F59E0B';
-    btn.style.color = '#D97706';
+    btn.style.background   = '#FEF3C7';
+    btn.style.borderColor  = '#F59E0B';
+    btn.style.color        = '#D97706';
   } else if (answer === -2) {
-    // Skipped (5th option) — blue
-    btn.style.background = '#E0F2FE';
-    btn.style.borderColor = '#0284C7';
-    btn.style.color = '#0284C7';
+    btn.style.background   = '#E0F2FE';
+    btn.style.borderColor  = '#0284C7';
+    btn.style.color        = '#0284C7';
   } else if (answer !== undefined) {
-    // Answered — green
-    btn.style.background = 'var(--success)';
-    btn.style.borderColor = 'var(--success)';
-    btn.style.color = 'white';
+    btn.style.background   = 'var(--success)';
+    btn.style.borderColor  = 'var(--success)';
+    btn.style.color        = 'white';
   } else {
-    // Not visited — white
-    btn.style.background = 'white';
-    btn.style.borderColor = 'var(--border)';
-    btn.style.color = 'var(--text-primary)';
+    btn.style.background   = 'white';
+    btn.style.borderColor  = 'var(--border)';
+    btn.style.color        = 'var(--text-primary)';
   }
 }
 
 window.goToQuestion = function(index) {
   recordQuestionTime();
-  currentQIndex = index;
+  currentQIndex     = index;
   questionStartTime = new Date();
   showTestQuestion();
 };
 
 function recordQuestionTime() {
   if (questionStartTime && allTestQuestions[currentQIndex]) {
-    const qId = allTestQuestions[currentQIndex].id;
-    const timeSpent =
-      Math.round((new Date() - questionStartTime) / 1000);
+    const qId       = allTestQuestions[currentQIndex].id;
+    const timeSpent = Math.round((new Date() - questionStartTime) / 1000);
     questionTimings[qId] = (questionTimings[qId] || 0) + timeSpent;
   }
 }
@@ -324,10 +318,10 @@ window.toggleReview = function() {
   updateNavButton(currentQIndex);
 };
 
-// ── SHOW QUESTION ──
+// ── SHOW TEST QUESTION (with image support) ──
 function showTestQuestion() {
-  const q = allTestQuestions[currentQIndex];
-  const total = allTestQuestions.length;
+  const q             = allTestQuestions[currentQIndex];
+  const total         = allTestQuestions.length;
   const answeredCount = Object.keys(userAnswers).length;
 
   document.getElementById('testProgress').textContent =
@@ -337,11 +331,11 @@ function showTestQuestion() {
   document.getElementById('testProgressBar').style.width =
     `${((currentQIndex+1)/total)*100}%`;
 
-  // Update review button
-  const reviewBtn = document.getElementById('reviewBtn');
-  reviewBtn.style.opacity = reviewFlags.has(q.id) ? '1' : '0.4';
+  // Review button
+  document.getElementById('reviewBtn').style.opacity =
+    reviewFlags.has(q.id) ? '1' : '0.4';
 
-  // Highlight current nav
+  // Highlight current nav button
   allTestQuestions.forEach((_, i) => {
     const btn = document.getElementById(`navBtn${i}`);
     if (btn) btn.style.outline =
@@ -357,19 +351,43 @@ function showTestQuestion() {
     document.getElementById('testPyqBadge').style.display = 'none';
   }
 
-  document.getElementById('testQuestionText').textContent = q.questionText;
+  // ── Question Text ──
+  document.getElementById('testQuestionText').textContent =
+    q.questionText || '';
 
-  const optLabels = ['A','B','C','D','E'];
-  const optColors = ['var(--primary)','var(--primary)',
-    'var(--primary)','var(--primary)','#64748B'];
-  const container = document.getElementById('testOptionsContainer');
+  // ── Question Image (optional) ──
+  let qImgEl = document.getElementById('testQuestionImg');
+  if (!qImgEl) {
+    qImgEl = document.createElement('img');
+    qImgEl.id  = 'testQuestionImg';
+    qImgEl.alt = 'Question Image';
+    qImgEl.style.cssText = `
+      width:100%; max-height:260px; object-fit:contain;
+      border-radius:10px; margin-top:10px; margin-bottom:4px;
+      border:1px solid var(--border); display:block;
+    `;
+    qImgEl.onerror = function() { this.style.display = 'none'; };
+    document.getElementById('testQuestionText')
+      .insertAdjacentElement('afterend', qImgEl);
+  }
+  if (q.questionImage) {
+    qImgEl.src = q.questionImage;
+    qImgEl.style.display = 'block';
+  } else {
+    qImgEl.style.display = 'none';
+  }
+
+  // ── Options ──
+  const optLabels     = ['A','B','C','D','E'];
+  const container     = document.getElementById('testOptionsContainer');
   container.innerHTML = '';
-
   const selectedAnswer = userAnswers[q.id];
 
-  // Regular options A B C D
+  // Options A B C D
   q.options.forEach((opt, i) => {
-    const isSelected = selectedAnswer === i;
+    const isSelected   = selectedAnswer === i;
+    const hasOptImage  = q.optionImages && q.optionImages[i];
+
     const btn = document.createElement('button');
     btn.style.cssText = `
       width:100%; padding:12px 14px; border-radius:10px;
@@ -381,15 +399,29 @@ function showTestQuestion() {
       font-family:Inter,sans-serif; transition:all 0.2s;
       display:flex; align-items:center; gap:10px;
     `;
-    btn.innerHTML = `
+
+    const labelHTML = `
       <span style="width:28px;height:28px;border-radius:50%;
         background:${isSelected ? 'var(--primary)' : 'var(--primary-light)'};
         color:${isSelected ? 'white' : 'var(--primary)'};
-        font-weight:700;font-size:13px;
-        display:flex;align-items:center;justify-content:center;
-        flex-shrink:0;">${optLabels[i]}</span>
-      <span>${opt}</span>
+        font-weight:700;font-size:13px;flex-shrink:0;
+        display:flex;align-items:center;justify-content:center;">
+        ${optLabels[i]}
+      </span>
     `;
+
+    if (hasOptImage) {
+      btn.innerHTML = `
+        ${labelHTML}
+        <img src="${q.optionImages[i]}" alt="Option ${optLabels[i]}"
+          style="max-width:calc(100% - 50px);max-height:120px;
+                 object-fit:contain;border-radius:6px;
+                 pointer-events:none;" />
+      `;
+    } else {
+      btn.innerHTML = `${labelHTML}<span>${opt}</span>`;
+    }
+
     btn.onclick = () => {
       userAnswers[q.id] = i;
       updateNavButton(currentQIndex);
@@ -400,12 +432,10 @@ function showTestQuestion() {
 
   // 5th option — Skip (no negative marking)
   const isSkipped = selectedAnswer === -2;
-  const skipBtn = document.createElement('button');
+  const skipBtn   = document.createElement('button');
   skipBtn.style.cssText = `
     width:100%; padding:12px 14px; border-radius:10px;
-    border:${isSkipped
-      ? '2px solid #64748B'
-      : '1.5px solid var(--border)'};
+    border:${isSkipped ? '2px solid #64748B' : '1.5px solid var(--border)'};
     background:${isSkipped ? '#F1F5F9' : 'white'};
     font-size:14px; text-align:left; cursor:pointer;
     font-family:Inter,sans-serif; transition:all 0.2s;
@@ -419,8 +449,9 @@ function showTestQuestion() {
       display:flex;align-items:center;justify-content:center;
       flex-shrink:0;">E</span>
     <span style="color:#64748B;">I don't want to attempt this question
-      <span style="font-size:11px;background:#DCFCE7;color:var(--success);
-             padding:2px 6px;border-radius:4px;margin-left:6px;">
+      <span style="font-size:11px;background:#DCFCE7;
+             color:var(--success);padding:2px 6px;
+             border-radius:4px;margin-left:6px;">
         No negative marks
       </span>
     </span>
@@ -432,7 +463,8 @@ function showTestQuestion() {
   };
   container.appendChild(skipBtn);
 
-  document.getElementById('prevBtn').disabled = currentQIndex === 0;
+  document.getElementById('prevBtn').disabled =
+    currentQIndex === 0;
   document.getElementById('nextTestBtn').textContent =
     currentQIndex === total-1 ? 'Last Question' : 'Next →';
 }
@@ -457,8 +489,8 @@ window.nextTestQuestion = function() {
 
 // ── SUBMIT ──
 window.confirmSubmit = function() {
-  const answered = Object.keys(userAnswers).length;
-  const total = allTestQuestions.length;
+  const answered   = Object.keys(userAnswers).length;
+  const total      = allTestQuestions.length;
   const unanswered = total - answered;
 
   if (unanswered > 0) {
@@ -476,58 +508,54 @@ async function submitTest() {
   clearInterval(timerInterval);
   document.getElementById('timerDisplay').style.display = 'none';
 
-  let totalScore = 0;
-  let correct = 0;
-  let wrong = 0;
-  let skipped = 0; // 5th option selected
-  let unattempted = 0; // completely blank
-  const answers = {};
+  let totalScore  = 0;
+  let correct     = 0;
+  let wrong       = 0;
+  let skipped     = 0;
+  let unattempted = 0;
+  const answers   = {};
 
   allTestQuestions.forEach(q => {
     const selected = userAnswers[q.id];
 
     if (selected === undefined) {
-      // Completely unattempted — negative applies
       unattempted++;
       totalScore -= q.negativeMarks || 0;
       answers[q.id] = {
         selectedOption: -1,
-        isCorrect: false,
-        marksAwarded: -(q.negativeMarks||0),
-        timeTaken: questionTimings[q.id] || 0,
-        status: 'unattempted'
+        isCorrect:      false,
+        marksAwarded:   -(q.negativeMarks||0),
+        timeTaken:      questionTimings[q.id] || 0,
+        status:         'unattempted'
       };
     } else if (selected === -2) {
-      // Skipped via 5th option — no negative
       skipped++;
       answers[q.id] = {
         selectedOption: -2,
-        isCorrect: false,
-        marksAwarded: 0,
-        timeTaken: questionTimings[q.id] || 0,
-        status: 'skipped'
+        isCorrect:      false,
+        marksAwarded:   0,
+        timeTaken:      questionTimings[q.id] || 0,
+        status:         'skipped'
       };
     } else if (selected === q.correctOption) {
-      // Correct answer
       correct++;
       totalScore += q.marksPerQ;
       answers[q.id] = {
         selectedOption: selected,
-        isCorrect: true,
-        marksAwarded: q.marksPerQ,
-        timeTaken: questionTimings[q.id] || 0,
-        status: 'correct'
+        isCorrect:      true,
+        marksAwarded:   q.marksPerQ,
+        timeTaken:      questionTimings[q.id] || 0,
+        status:         'correct'
       };
     } else {
-      // Wrong answer — negative applies
       wrong++;
       totalScore -= q.negativeMarks || 0;
       answers[q.id] = {
         selectedOption: selected,
-        isCorrect: false,
-        marksAwarded: -(q.negativeMarks||0),
-        timeTaken: questionTimings[q.id] || 0,
-        status: 'wrong'
+        isCorrect:      false,
+        marksAwarded:   -(q.negativeMarks||0),
+        timeTaken:      questionTimings[q.id] || 0,
+        status:         'wrong'
       };
     }
   });
@@ -540,21 +568,16 @@ async function submitTest() {
 
   try {
     const attemptData = {
-      userId: currentUser?.uid || 'guest',
-      testId: testIdParam,
-      testTitle: testData.title,
-      startedAt: testStartTime,
-      submittedAt: new Date(),
-      totalScore: Math.max(0, totalScore),
-      totalMarks: testData.totalMarks,
-      totalQuestions: allTestQuestions.length,
-      correct,
-      wrong,
-      skipped,
-      unattempted,
-      accuracy,
-      totalTimeTaken,
-      answers
+      userId:          currentUser?.uid || 'guest',
+      testId:          testIdParam,
+      testTitle:       testData.title,
+      startedAt:       testStartTime,
+      submittedAt:     new Date(),
+      totalScore:      Math.max(0, totalScore),
+      totalMarks:      testData.totalMarks,
+      totalQuestions:  allTestQuestions.length,
+      correct, wrong, skipped, unattempted,
+      accuracy, totalTimeTaken, answers
     };
 
     const attemptRef = await addDoc(
@@ -585,3 +608,4 @@ window.showToast = function(message, type='info') {
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 };
+

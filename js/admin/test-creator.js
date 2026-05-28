@@ -68,7 +68,6 @@ async function loadQuestions() {
   questionsCache = [];
   snap.forEach(d => {
     const data = d.data();
-    // Only load non-testOnly questions for selection
     if (!data.isTestOnly) {
       questionsCache.push({ id: d.id, ...data });
     }
@@ -83,8 +82,6 @@ async function cleanupExpiredTestQuestions() {
 
     for (const testDoc of snap.docs) {
       const t = testDoc.data();
-
-      // Check if test is expired
       const isExpired = t.expiresAt &&
         (t.expiresAt.toDate
           ? t.expiresAt.toDate() < now
@@ -92,7 +89,6 @@ async function cleanupExpiredTestQuestions() {
 
       if (!isExpired) continue;
 
-      // Get sections and find testOnly questions
       const sectionsSnap = await getDocs(
         collection(db, 'tests', testDoc.id, 'sections')
       );
@@ -102,8 +98,7 @@ async function cleanupExpiredTestQuestions() {
         for (const qId of questionIds) {
           try {
             const qSnap = await getDoc(doc(db, 'questions', qId));
-            if (qSnap.exists() &&
-                qSnap.data().isTestOnly === true) {
+            if (qSnap.exists() && qSnap.data().isTestOnly === true) {
               await deleteDoc(doc(db, 'questions', qId));
             }
           } catch(e) { /* silent fail */ }
@@ -117,7 +112,6 @@ async function cleanupExpiredTestQuestions() {
 
 // ── LOAD TESTS LIST ──
 async function loadTests() {
-  // Run cleanup first silently
   await cleanupExpiredTestQuestions();
 
   const loader = document.getElementById('testsLoader');
@@ -127,9 +121,7 @@ async function loadTests() {
     const snap = await getDocs(collection(db, 'tests'));
     const tests = [];
     snap.forEach(d => tests.push({ id: d.id, ...d.data() }));
-    tests.sort((a, b) =>
-      (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0)
-    );
+    tests.sort((a, b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
 
     loader.style.display = 'none';
 
@@ -156,15 +148,12 @@ async function loadTests() {
 
       return `
         <div class="card">
-          <div style="display:flex;align-items:flex-start;
-                      gap:12px;margin-bottom:12px;">
+          <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;">
             <div class="exam-body-icon"
               style="background:linear-gradient(135deg,#DC2626,#b91c1c);
                      font-size:20px;flex-shrink:0;">🎯</div>
             <div style="flex:1;">
-              <h3 style="font-size:14px;font-weight:700;">
-                ${t.title}
-              </h3>
+              <h3 style="font-size:14px;font-weight:700;">${t.title}</h3>
               <p style="font-size:12px;color:var(--text-secondary);">
                 ${t.duration} min • ${t.totalMarks} marks •
                 ${t.isActive ? '🟢 Active' : '🔴 Inactive'}
@@ -221,8 +210,7 @@ function updateMarksDisplay() {
   const used = getUsedMarks();
   const total = testTotalMarks;
   const remaining = total - used;
-  const percent = total > 0
-    ? Math.min((used/total)*100, 100) : 0;
+  const percent = total > 0 ? Math.min((used/total)*100, 100) : 0;
 
   const display = document.getElementById('marksUsedDisplay');
   const bar = document.getElementById('marksProgressBar');
@@ -231,24 +219,19 @@ function updateMarksDisplay() {
   if (display) display.textContent = `${used} / ${total}`;
   if (bar) {
     bar.style.width = `${percent}%`;
-    bar.style.background =
-      percent >= 100 ? 'var(--danger)'
-      : percent >= 80 ? 'var(--warning)'
-      : 'var(--primary)';
+    bar.style.background = percent >= 100 ? 'var(--danger)'
+      : percent >= 80 ? 'var(--warning)' : 'var(--primary)';
   }
   if (text) {
-    text.textContent =
-      remaining > 0 ? `${remaining} marks remaining`
+    text.textContent = remaining > 0 ? `${remaining} marks remaining`
       : remaining === 0 ? '✅ All marks used perfectly!'
       : `⚠️ Exceeded by ${Math.abs(remaining)} marks!`;
   }
 }
 
 window.checkMarksWarning = function() {
-  const qCount =
-    parseInt(document.getElementById('questionCount')?.value)||0;
-  const marksPerQ =
-    parseFloat(document.getElementById('marksPerQ')?.value)||1;
+  const qCount = parseInt(document.getElementById('questionCount')?.value)||0;
+  const marksPerQ = parseFloat(document.getElementById('marksPerQ')?.value)||1;
   const sectionMarks = qCount * marksPerQ;
   const remaining = getRemainingMarks();
   const warning = document.getElementById('marksWarning');
@@ -270,8 +253,7 @@ function renderSubjectCheckboxes() {
   if (!container) return;
 
   if (subjectsCache.length === 0) {
-    container.innerHTML =
-      '<p style="font-size:12px;color:var(--text-secondary);">No subjects found.</p>';
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">No subjects found.</p>';
     return;
   }
 
@@ -279,14 +261,11 @@ function renderSubjectCheckboxes() {
     <label style="display:flex;align-items:center;gap:10px;
                   padding:8px 12px;background:#EFF6FF;
                   border-radius:var(--radius-sm);cursor:pointer;
-                  border:1.5px solid var(--primary);
-                  margin-bottom:6px;">
+                  border:1.5px solid var(--primary);margin-bottom:6px;">
       <input type="checkbox" id="selectAllSubjects"
         onchange="toggleAllSubjects(this.checked)"
-        style="width:18px;height:18px;cursor:pointer;
-               accent-color:var(--primary);"/>
-      <span style="font-size:14px;font-weight:700;
-                   color:var(--primary);">
+        style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
+      <span style="font-size:14px;font-weight:700;color:var(--primary);">
         ✅ Select All Subjects
       </span>
     </label>
@@ -294,32 +273,24 @@ function renderSubjectCheckboxes() {
       <label style="display:flex;align-items:center;gap:10px;
                     padding:8px 12px;background:var(--bg);
                     border-radius:var(--radius-sm);cursor:pointer;
-                    border:1px solid var(--border);
-                    margin-bottom:4px;">
+                    border:1px solid var(--border);margin-bottom:4px;">
         <input type="checkbox" value="${s.id}"
           class="subject-checkbox"
           onchange="onSubjectChange()"
-          style="width:18px;height:18px;cursor:pointer;
-                 accent-color:var(--primary);"/>
-        <span style="font-size:14px;font-weight:500;">
-          📚 ${s.name}
-        </span>
+          style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
+        <span style="font-size:14px;font-weight:500;">📚 ${s.name}</span>
       </label>
     `).join('')}
   `;
 }
 
 window.toggleAllSubjects = function(checked) {
-  document.querySelectorAll('.subject-checkbox').forEach(cb => {
-    cb.checked = checked;
-  });
+  document.querySelectorAll('.subject-checkbox').forEach(cb => { cb.checked = checked; });
   onSubjectChange();
 };
 
 window.toggleAllTopics = function(checked) {
-  document.querySelectorAll('.topic-checkbox').forEach(cb => {
-    cb.checked = checked;
-  });
+  document.querySelectorAll('.topic-checkbox').forEach(cb => { cb.checked = checked; });
   updateAvailableCount();
 };
 
@@ -346,18 +317,14 @@ function renderTopicCheckboxes(subjectIds) {
   if (!container) return;
 
   if (subjectIds.length === 0) {
-    container.innerHTML =
-      '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first.</p>';
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">Select subjects first.</p>';
     return;
   }
 
-  const filteredTopics = topicsCache.filter(t =>
-    subjectIds.includes(t.subjectId)
-  );
+  const filteredTopics = topicsCache.filter(t => subjectIds.includes(t.subjectId));
 
   if (filteredTopics.length === 0) {
-    container.innerHTML =
-      '<p style="font-size:12px;color:var(--text-secondary);">No topics found.</p>';
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-secondary);">No topics found.</p>';
     return;
   }
 
@@ -365,14 +332,11 @@ function renderTopicCheckboxes(subjectIds) {
     <label style="display:flex;align-items:center;gap:10px;
                   padding:8px 12px;background:#EFF6FF;
                   border-radius:var(--radius-sm);cursor:pointer;
-                  border:1.5px solid var(--primary);
-                  margin-bottom:6px;">
+                  border:1.5px solid var(--primary);margin-bottom:6px;">
       <input type="checkbox" id="selectAllTopics"
         onchange="toggleAllTopics(this.checked)"
-        style="width:18px;height:18px;cursor:pointer;
-               accent-color:var(--primary);"/>
-      <span style="font-size:14px;font-weight:700;
-                   color:var(--primary);">
+        style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
+      <span style="font-size:14px;font-weight:700;color:var(--primary);">
         ✅ Select All Topics
       </span>
     </label>
@@ -380,28 +344,23 @@ function renderTopicCheckboxes(subjectIds) {
 
   subjectIds.forEach(sId => {
     const subject = subjectsCache.find(s => s.id === sId);
-    const subjectTopics =
-      filteredTopics.filter(t => t.subjectId === sId);
+    const subjectTopics = filteredTopics.filter(t => t.subjectId === sId);
     if (subjectTopics.length === 0) return;
 
     html += `
       <div style="margin-bottom:10px;">
-        <p style="font-size:12px;font-weight:700;
-                  color:var(--primary);margin-bottom:6px;">
+        <p style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;">
           📚 ${subject?.name || ''}
         </p>
         ${subjectTopics.map(t => `
           <label style="display:flex;align-items:center;gap:10px;
                         padding:8px 12px;background:var(--bg);
-                        border-radius:var(--radius-sm);
-                        cursor:pointer;
-                        border:1px solid var(--border);
-                        margin-bottom:4px;">
+                        border-radius:var(--radius-sm);cursor:pointer;
+                        border:1px solid var(--border);margin-bottom:4px;">
             <input type="checkbox" value="${t.id}"
               class="topic-checkbox"
               onchange="updateAvailableCount()"
-              style="width:18px;height:18px;cursor:pointer;
-                     accent-color:var(--primary);"/>
+              style="width:18px;height:18px;cursor:pointer;accent-color:var(--primary);"/>
             <span style="font-size:13px;">📖 ${t.name}</span>
           </label>
         `).join('')}
@@ -415,28 +374,19 @@ function renderTopicCheckboxes(subjectIds) {
 window.updateAvailableCount = function() {
   const topicIds = getSelectedTopicIds();
   const sources = [];
-  if (document.getElementById('sourcePYQ')?.checked)
-    sources.push('PYQ');
-  if (document.getElementById('sourceIMP')?.checked)
-    sources.push('IMP');
+  if (document.getElementById('sourcePYQ')?.checked) sources.push('PYQ');
+  if (document.getElementById('sourceIMP')?.checked) sources.push('IMP');
 
   const difficulties = [];
-  if (document.getElementById('diffEasy')?.checked)
-    difficulties.push('easy');
-  if (document.getElementById('diffMedium')?.checked)
-    difficulties.push('medium');
-  if (document.getElementById('diffHard')?.checked)
-    difficulties.push('hard');
+  if (document.getElementById('diffEasy')?.checked) difficulties.push('easy');
+  if (document.getElementById('diffMedium')?.checked) difficulties.push('medium');
+  if (document.getElementById('diffHard')?.checked) difficulties.push('hard');
 
   const available = questionsCache.filter(q => {
     if (q.isTestOnly) return false;
-    const matchTopic =
-      topicIds.length === 0 || topicIds.includes(q.topicId);
-    const matchSource =
-      sources.length === 0 || sources.includes(q.type);
-    const matchDiff =
-      difficulties.length === 0 ||
-      difficulties.includes(q.difficulty);
+    const matchTopic = topicIds.length === 0 || topicIds.includes(q.topicId);
+    const matchSource = sources.length === 0 || sources.includes(q.type);
+    const matchDiff = difficulties.length === 0 || difficulties.includes(q.difficulty);
     return matchTopic && matchSource && matchDiff;
   });
 
@@ -445,8 +395,7 @@ window.updateAvailableCount = function() {
     info.textContent = topicIds.length === 0
       ? 'Select topics to see available questions.'
       : `✅ ${available.length} questions available.`;
-    info.style.color =
-      available.length > 0 ? 'var(--success)' : 'var(--danger)';
+    info.style.color = available.length > 0 ? 'var(--success)' : 'var(--danger)';
   }
 
   checkMarksWarning();
@@ -461,61 +410,42 @@ window.toggleActive = function() {
 
 window.toggleTestActive = async function(testId, current) {
   try {
-    await updateDoc(doc(db, 'tests', testId),
-      { isActive: !current });
-    showToast(
-      `Test ${!current ? 'activated':'deactivated'}!`, 'success'
-    );
+    await updateDoc(doc(db, 'tests', testId), { isActive: !current });
+    showToast(`Test ${!current ? 'activated':'deactivated'}!`, 'success');
     await loadTests();
   } catch(e) { showToast('Error', 'error'); }
 };
 
-// ── DELETE TEST (with auto cleanup of testOnly questions) ──
+// ── DELETE TEST ──
 window.deleteTest = async function(testId) {
   if (!confirm('Delete this test permanently?')) return;
   try {
-    // Step 1 — Get all sections
     const sectionsSnap = await getDocs(
       collection(db, 'tests', testId, 'sections')
     );
 
-    // Step 2 — Collect all isTestOnly question IDs
     const testOnlyQuestionIds = new Set();
     for (const s of sectionsSnap.docs) {
-      const sectionData = s.data();
-      const questionIds = sectionData.questionIds || [];
-
+      const questionIds = s.data().questionIds || [];
       for (const qId of questionIds) {
         try {
           const qSnap = await getDoc(doc(db, 'questions', qId));
-          if (qSnap.exists() &&
-              qSnap.data().isTestOnly === true) {
+          if (qSnap.exists() && qSnap.data().isTestOnly === true) {
             testOnlyQuestionIds.add(qId);
           }
         } catch(e) { console.error(e); }
       }
-
-      // Delete section
-      await deleteDoc(
-        doc(db, 'tests', testId, 'sections', s.id)
-      );
+      await deleteDoc(doc(db, 'tests', testId, 'sections', s.id));
     }
 
-    // Step 3 — Delete all isTestOnly questions
     for (const qId of testOnlyQuestionIds) {
-      try {
-        await deleteDoc(doc(db, 'questions', qId));
-      } catch(e) { console.error(e); }
+      try { await deleteDoc(doc(db, 'questions', qId)); } catch(e) { console.error(e); }
     }
 
-    // Step 4 — Delete the test itself
     await deleteDoc(doc(db, 'tests', testId));
-
     const deletedQCount = testOnlyQuestionIds.size;
     showToast(
-      `Test deleted!${deletedQCount > 0
-        ? ' ' + deletedQCount + ' test-only questions removed.'
-        : ''}`,
+      `Test deleted!${deletedQCount > 0 ? ' '+deletedQCount+' test-only questions removed.' : ''}`,
       'success'
     );
     await loadTests();
@@ -529,10 +459,8 @@ window.deleteTest = async function(testId) {
 // ── SHARE & RANK ──
 window.shareTest = function(testId, encodedTitle) {
   const testTitle = decodeURIComponent(encodedTitle);
-  const url =
-    `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
-  const message =
-    `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt now:\n${url}`;
+  const url = `https://nishchayacademydhg.web.app/test.html?testId=${testId}`;
+  const message = `📚 *Nishchay Academy*\n\n🎯 *${testTitle}*\n\nAttempt now:\n${url}`;
   if (navigator.share) {
     navigator.share({ title: testTitle, text: message, url });
   } else {
@@ -554,27 +482,23 @@ window.showCreateForm = function() {
   freshQuestionsFromExcel = [];
   testTotalMarks = 0;
 
-  document.getElementById('testFormTitle').textContent =
-    'Create Test';
+  document.getElementById('testFormTitle').textContent = 'Create Test';
   document.getElementById('testTitle').value = '';
   document.getElementById('testExamSelect').value = '';
   document.getElementById('testDuration').value = '';
   document.getElementById('testTotalMarks').value = '';
   document.getElementById('testActivateAt').value = '';
   document.getElementById('testExpiresAt').value = '';
-  document.getElementById('toggleSlider').style.background =
-    '#CBD5E1';
+  document.getElementById('toggleSlider').style.background = '#CBD5E1';
   document.getElementById('sectionsArea').style.display = 'none';
   document.getElementById('sectionsList').innerHTML = '';
-  document.getElementById('testsListSection').style.display =
-    'none';
+  document.getElementById('testsListSection').style.display = 'none';
   document.getElementById('testForm').style.display = 'block';
 };
 
 window.hideCreateForm = function() {
   document.getElementById('testForm').style.display = 'none';
-  document.getElementById('testsListSection').style.display =
-    'block';
+  document.getElementById('testsListSection').style.display = 'block';
   currentTestId = null;
 };
 
@@ -586,42 +510,32 @@ window.editTest = async function(testId) {
     currentTestId = testId;
     testTotalMarks = t.totalMarks || 0;
 
-    document.getElementById('testFormTitle').textContent =
-      'Edit Test';
+    document.getElementById('testFormTitle').textContent = 'Edit Test';
     document.getElementById('testTitle').value = t.title || '';
-    document.getElementById('testExamSelect').value =
-      t.examId || '';
-    document.getElementById('testDuration').value =
-      t.duration || '';
-    document.getElementById('testTotalMarks').value =
-      t.totalMarks || '';
+    document.getElementById('testExamSelect').value = t.examId || '';
+    document.getElementById('testDuration').value = t.duration || '';
+    document.getElementById('testTotalMarks').value = t.totalMarks || '';
     isActive = t.isActive || false;
     document.getElementById('toggleSlider').style.background =
       isActive ? 'var(--primary)' : '#CBD5E1';
 
     if (t.activateAt) {
-      const d = t.activateAt.toDate
-        ? t.activateAt.toDate() : new Date(t.activateAt);
-      document.getElementById('testActivateAt').value =
-        d.toISOString().slice(0,16);
+      const d = t.activateAt.toDate ? t.activateAt.toDate() : new Date(t.activateAt);
+      document.getElementById('testActivateAt').value = d.toISOString().slice(0,16);
     } else {
       document.getElementById('testActivateAt').value = '';
     }
 
     if (t.expiresAt) {
-      const d = t.expiresAt.toDate
-        ? t.expiresAt.toDate() : new Date(t.expiresAt);
-      document.getElementById('testExpiresAt').value =
-        d.toISOString().slice(0,16);
+      const d = t.expiresAt.toDate ? t.expiresAt.toDate() : new Date(t.expiresAt);
+      document.getElementById('testExpiresAt').value = d.toISOString().slice(0,16);
     } else {
       document.getElementById('testExpiresAt').value = '';
     }
 
-    document.getElementById('testsListSection').style.display =
-      'none';
+    document.getElementById('testsListSection').style.display = 'none';
     document.getElementById('testForm').style.display = 'block';
-    document.getElementById('sectionsArea').style.display =
-      'block';
+    document.getElementById('sectionsArea').style.display = 'block';
 
     await loadSections(testId);
     updateMarksDisplay();
@@ -631,23 +545,15 @@ window.editTest = async function(testId) {
 
 // ── SAVE TEST ──
 window.saveTestDetails = async function() {
-  const title =
-    document.getElementById('testTitle').value.trim();
-  const examId =
-    document.getElementById('testExamSelect').value;
-  const duration =
-    parseInt(document.getElementById('testDuration').value)||60;
-  const totalMarks =
-    parseInt(document.getElementById('testTotalMarks').value)||0;
-  const activateAtVal =
-    document.getElementById('testActivateAt').value;
-  const expiresAtVal =
-    document.getElementById('testExpiresAt').value;
+  const title = document.getElementById('testTitle').value.trim();
+  const examId = document.getElementById('testExamSelect').value;
+  const duration = parseInt(document.getElementById('testDuration').value)||60;
+  const totalMarks = parseInt(document.getElementById('testTotalMarks').value)||0;
+  const activateAtVal = document.getElementById('testActivateAt').value;
+  const expiresAtVal = document.getElementById('testExpiresAt').value;
 
   if (!title) { showToast('Enter test title','error'); return; }
-  if (totalMarks <= 0) {
-    showToast('Enter valid total marks','error'); return;
-  }
+  if (totalMarks <= 0) { showToast('Enter valid total marks','error'); return; }
 
   testTotalMarks = totalMarks;
 
@@ -671,8 +577,7 @@ window.saveTestDetails = async function() {
       showToast('Test created! Now add sections.', 'success');
     }
 
-    document.getElementById('sectionsArea').style.display =
-      'block';
+    document.getElementById('sectionsArea').style.display = 'block';
     await loadSections(currentTestId);
     updateMarksDisplay();
 
@@ -688,48 +593,33 @@ window.saveTestDetails = async function() {
 async function loadSections(testId) {
   const list = document.getElementById('sectionsList');
   try {
-    const snap = await getDocs(
-      collection(db, 'tests', testId, 'sections')
-    );
+    const snap = await getDocs(collection(db, 'tests', testId, 'sections'));
     sectionsCache = [];
-    snap.forEach(d =>
-      sectionsCache.push({ id: d.id, ...d.data() })
-    );
+    snap.forEach(d => sectionsCache.push({ id: d.id, ...d.data() }));
     sectionsCache.sort((a, b) => (a.order||0) - (b.order||0));
 
     updateMarksDisplay();
 
     if (sectionsCache.length === 0) {
-      list.innerHTML =
-        '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet.</p>';
+      list.innerHTML = '<p style="text-align:center;color:var(--text-secondary);font-size:13px;padding:16px;">No sections yet.</p>';
       return;
     }
 
     list.innerHTML = sectionsCache.map(s => {
-      const sectionMarks =
-        (s.questionIds?.length||0) * (s.marksPerQ||1);
+      const sectionMarks = (s.questionIds?.length||0) * (s.marksPerQ||1);
       return `
         <div class="card">
-          <div style="display:flex;justify-content:space-between;
-                      align-items:center;margin-bottom:8px;">
-            <h4 style="font-size:14px;font-weight:700;">
-              ${s.title}
-            </h4>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h4 style="font-size:14px;font-weight:700;">${s.title}</h4>
             <button onclick="deleteSection('${s.id}')"
               class="btn btn-sm"
-              style="background:#FEE2E2;color:#DC2626;border:none;">
-              Del
-            </button>
+              style="background:#FEE2E2;color:#DC2626;border:none;">Del</button>
           </div>
-          <div style="font-size:12px;color:var(--text-secondary);
-                      display:flex;flex-wrap:wrap;gap:8px;">
+          <div style="font-size:12px;color:var(--text-secondary);display:flex;flex-wrap:wrap;gap:8px;">
             <span>📝 ${s.questionIds?.length||0} questions</span>
             <span>✅ ${s.marksPerQ} marks/Q</span>
-            <span>❌ ${s.negativeMarks > 0
-              ? '-'+s.negativeMarks : 'No negative'}</span>
-            <span style="color:var(--primary);font-weight:600;">
-              🏆 ${sectionMarks} marks
-            </span>
+            <span>❌ ${s.negativeMarks > 0 ? '-'+s.negativeMarks : 'No negative'}</span>
+            <span style="color:var(--primary);font-weight:600;">🏆 ${sectionMarks} marks</span>
           </div>
         </div>
       `;
@@ -748,8 +638,7 @@ window.showAddSection = function() {
   document.getElementById('marksWarning').style.display = 'none';
   document.getElementById('availableCountInfo').textContent =
     'Select subjects, topics and filters to see available questions.';
-  document.getElementById('availableCountInfo').style.color =
-    'var(--text-secondary)';
+  document.getElementById('availableCountInfo').style.color = 'var(--text-secondary)';
 
   document.getElementById('sourcePYQ').checked = false;
   document.getElementById('sourceIMP').checked = true;
@@ -763,9 +652,7 @@ window.showAddSection = function() {
   renderSubjectCheckboxes();
 
   document.getElementById('sectionForm').style.display = 'block';
-  document.getElementById('sectionForm').scrollIntoView({
-    behavior: 'smooth'
-  });
+  document.getElementById('sectionForm').scrollIntoView({ behavior: 'smooth' });
 };
 
 window.hideSectionForm = function() {
@@ -774,31 +661,23 @@ window.hideSectionForm = function() {
 };
 
 window.saveSection = async function() {
-  const title =
-    document.getElementById('sectionTitle').value.trim();
-  const marksPerQ =
-    parseFloat(document.getElementById('marksPerQ').value)||1;
-  const negativeMarks =
-    parseFloat(document.getElementById('negativeMarks').value)||0;
-  const questionCount =
-    parseInt(document.getElementById('questionCount').value)||0;
+  const title = document.getElementById('sectionTitle').value.trim();
+  const marksPerQ = parseFloat(document.getElementById('marksPerQ').value)||1;
+  const negativeMarks = parseFloat(document.getElementById('negativeMarks').value)||0;
+  const questionCount = parseInt(document.getElementById('questionCount').value)||0;
 
   if (!title) { showToast('Enter section title','error'); return; }
-  if (!currentTestId) {
-    showToast('Save test first','error'); return;
-  }
+  if (!currentTestId) { showToast('Save test first','error'); return; }
 
   const sectionMarks = questionCount * marksPerQ;
   const remaining = getRemainingMarks();
 
-  if (freshQuestionsFromExcel.length === 0 &&
-      questionCount === 0) {
+  if (freshQuestionsFromExcel.length === 0 && questionCount === 0) {
     showToast('Enter question count or upload Excel','error');
     return;
   }
 
-  if (freshQuestionsFromExcel.length === 0 &&
-      sectionMarks > remaining) {
+  if (freshQuestionsFromExcel.length === 0 && sectionMarks > remaining) {
     showToast(
       `${sectionMarks} marks needed but only ${remaining} remaining. Please adjust.`,
       'warning'
@@ -813,7 +692,6 @@ window.saveSection = async function() {
     let questionIds = [];
 
     if (freshQuestionsFromExcel.length > 0) {
-      // Save with isTestOnly: true — won't show in practice
       showToast('Saving fresh questions...', 'info');
       for (const qData of freshQuestionsFromExcel) {
         const ref = await addDoc(collection(db, 'questions'), {
@@ -824,34 +702,24 @@ window.saveSection = async function() {
         questionIds.push(ref.id);
       }
       freshQuestionsFromExcel = [];
-      document.getElementById('freshQStatus').style.display =
-        'none';
+      document.getElementById('freshQStatus').style.display = 'none';
 
     } else {
       const topicIds = getSelectedTopicIds();
       const sources = [];
-      if (document.getElementById('sourcePYQ').checked)
-        sources.push('PYQ');
-      if (document.getElementById('sourceIMP').checked)
-        sources.push('IMP');
+      if (document.getElementById('sourcePYQ').checked) sources.push('PYQ');
+      if (document.getElementById('sourceIMP').checked) sources.push('IMP');
 
       const difficulties = [];
-      if (document.getElementById('diffEasy').checked)
-        difficulties.push('easy');
-      if (document.getElementById('diffMedium').checked)
-        difficulties.push('medium');
-      if (document.getElementById('diffHard').checked)
-        difficulties.push('hard');
+      if (document.getElementById('diffEasy').checked) difficulties.push('easy');
+      if (document.getElementById('diffMedium').checked) difficulties.push('medium');
+      if (document.getElementById('diffHard').checked) difficulties.push('hard');
 
       const filtered = questionsCache.filter(q => {
         if (q.isTestOnly) return false;
-        const matchTopic =
-          topicIds.length === 0 || topicIds.includes(q.topicId);
-        const matchSource =
-          sources.length === 0 || sources.includes(q.type);
-        const matchDiff =
-          difficulties.length === 0 ||
-          difficulties.includes(q.difficulty);
+        const matchTopic = topicIds.length === 0 || topicIds.includes(q.topicId);
+        const matchSource = sources.length === 0 || sources.includes(q.type);
+        const matchDiff = difficulties.length === 0 || difficulties.includes(q.difficulty);
         return matchTopic && matchSource && matchDiff;
       });
 
@@ -865,18 +733,13 @@ window.saveSection = async function() {
       questionIds = shuffled.slice(0, questionCount).map(q => q.id);
     }
 
-    await addDoc(
-      collection(db, 'tests', currentTestId, 'sections'), {
-        title, questionIds, marksPerQ, negativeMarks,
-        order: sectionsCache.length + 1,
-        createdAt: serverTimestamp()
-      }
-    );
+    await addDoc(collection(db, 'tests', currentTestId, 'sections'), {
+      title, questionIds, marksPerQ, negativeMarks,
+      order: sectionsCache.length + 1,
+      createdAt: serverTimestamp()
+    });
 
-    showToast(
-      `Section added with ${questionIds.length} questions!`,
-      'success'
-    );
+    showToast(`Section added with ${questionIds.length} questions!`, 'success');
     hideSectionForm();
     await loadSections(currentTestId);
     updateMarksDisplay();
@@ -892,7 +755,6 @@ window.saveSection = async function() {
 window.deleteSection = async function(sectionId) {
   if (!confirm('Delete this section?')) return;
   try {
-    // Also delete testOnly questions in this section
     const sectionSnap = await getDoc(
       doc(db, 'tests', currentTestId, 'sections', sectionId)
     );
@@ -901,17 +763,14 @@ window.deleteSection = async function(sectionId) {
       for (const qId of questionIds) {
         try {
           const qSnap = await getDoc(doc(db, 'questions', qId));
-          if (qSnap.exists() &&
-              qSnap.data().isTestOnly === true) {
+          if (qSnap.exists() && qSnap.data().isTestOnly === true) {
             await deleteDoc(doc(db, 'questions', qId));
           }
         } catch(e) { /* skip */ }
       }
     }
 
-    await deleteDoc(
-      doc(db, 'tests', currentTestId, 'sections', sectionId)
-    );
+    await deleteDoc(doc(db, 'tests', currentTestId, 'sections', sectionId));
     showToast('Section deleted!','success');
     await loadSections(currentTestId);
     updateMarksDisplay();
@@ -936,29 +795,37 @@ window.finishTest = async function() {
   setTimeout(() => { hideCreateForm(); loadTests(); }, 1500);
 };
 
-// ── FRESH QUESTIONS EXCEL ──
+// ── FRESH QUESTIONS EXCEL (with image URL support) ──
 window.downloadFreshQTemplate = function() {
   const wb = XLSX.utils.book_new();
   const headers = [
     'Question Text',
-    'Option A','Option B','Option C','Option D',
+    'Option A', 'Option B', 'Option C', 'Option D',
     'Correct Answer (A/B/C/D)',
     'Type (PYQ or IMP)',
     'Difficulty (easy/medium/hard)',
     'Explanation',
     'PYQ Exam Name (if PYQ)',
     'PYQ Year (if PYQ)',
-    'PYQ Exam Body (if PYQ)'
+    'PYQ Exam Body (if PYQ)',
+    // ── NEW: Image URL columns ──
+    'Question Image URL (optional)',
+    'Option A Image URL (optional)',
+    'Option B Image URL (optional)',
+    'Option C Image URL (optional)',
+    'Option D Image URL (optional)'
   ];
   const sample = [
     'Which article deals with Right to Equality?',
     'Article 12','Article 14','Article 19','Article 21',
     'B','PYQ','medium',
     'Article 14 deals with Right to Equality',
-    'Talati','2022','GPSSB'
+    'Talati','2022','GPSSB',
+    // Image URL columns — leave blank for text questions
+    '', '', '', '', ''
   ];
   const ws = XLSX.utils.aoa_to_sheet([headers, sample]);
-  ws['!cols'] = headers.map(() => ({ wch: 20 }));
+  ws['!cols'] = headers.map(() => ({ wch: 22 }));
   XLSX.utils.book_append_sheet(wb, ws, 'Questions');
   XLSX.writeFile(wb, 'fresh_questions_template.xlsx');
   showToast('Template downloaded!','success');
@@ -979,10 +846,18 @@ window.handleFreshQUpload = async function(event) {
     const wb = XLSX.read(data);
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-    const dataRows = rows.slice(1).filter(r => r[0]);
+    const dataRows = rows.slice(1).filter(r => r[0] || r[12]); // allow image-only questions
 
     freshQuestionsFromExcel = dataRows.map(row => {
       const type = String(row[6]||'IMP').trim().toUpperCase();
+
+      // ── NEW: Image URL columns ──
+      const questionImageUrl = String(row[12]||'').trim();
+      const optAImageUrl     = String(row[13]||'').trim();
+      const optBImageUrl     = String(row[14]||'').trim();
+      const optCImageUrl     = String(row[15]||'').trim();
+      const optDImageUrl     = String(row[16]||'').trim();
+
       const qData = {
         questionText: String(row[0]||'').trim(),
         options: [
@@ -995,19 +870,32 @@ window.handleFreshQUpload = async function(event) {
           String(row[5]||'A').trim().toUpperCase()
         ),
         type: type === 'PYQ' ? 'PYQ' : 'IMP',
-        difficulty:
-          String(row[7]||'medium').trim().toLowerCase(),
+        difficulty: String(row[7]||'medium').trim().toLowerCase(),
         explanation: String(row[8]||'').trim()
       };
 
       if (type === 'PYQ') {
-        qData.pyqExamName = String(row[9]||'').trim();
-        qData.pyqYear = String(row[10]||'').trim();
+        qData.pyqExamName     = String(row[9]||'').trim();
+        qData.pyqYear         = String(row[10]||'').trim();
         qData.pyqExamBodyName = String(row[11]||'').trim();
       }
 
+      // Add image fields only if they have values
+      if (questionImageUrl) {
+        qData.questionImage = questionImageUrl;
+      }
+      const optionImages = [optAImageUrl, optBImageUrl, optCImageUrl, optDImageUrl];
+      if (optionImages.some(u => u !== '')) {
+        qData.optionImages = optionImages;
+      }
+
       return qData;
-    }).filter(q => q.questionText && q.options[0]);
+    }).filter(q =>
+      // Keep if has question text OR question image
+      (q.questionText || q.questionImage) &&
+      // Keep if has at least option A text OR option A image
+      (q.options[0] || (q.optionImages && q.optionImages[0]))
+    );
 
     status.style.background = '#DCFCE7';
     status.style.color = 'var(--success)';
