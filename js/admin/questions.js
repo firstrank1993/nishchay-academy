@@ -796,4 +796,3 @@ window.showToast = function(message, type = 'info') {
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 3000);
 };
-
