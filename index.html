@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="apple-touch-icon" href="/assets/icons/icon-180.png"/>
   <link rel="icon" type="image/png" href="/assets/icons/favicon.png"/>
@@ -13,64 +13,348 @@
   <title>Nishchay Academy — Gujarat Exam Preparation</title>
   <meta name="description" content="Prepare for Gujarat Government Exams — GPSC, GPSSB, GSSSB with topic-wise MCQs, PYQs and Mock Tests."/>
   <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* ── HOME PAGE EXTRAS ── */
+    .home-header-inner {
+      display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .home-header-left { display: flex; align-items: center; gap: 10px; }
+    .header-logo-mark {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(245,158,11,0.45);
+    }
+    .header-meta { display: flex; gap: 8px; align-items: center; }
+    .streak-badge {
+      background: rgba(245,168,0,0.15);
+      border: 1px solid rgba(245,168,0,0.4);
+      border-radius: 20px; padding: 4px 10px;
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      display: flex; align-items: center; gap: 3px;
+    }
+    .lang-toggle-wrap {
+      display: flex; background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px; overflow: hidden;
+    }
+    .lang-toggle-btn {
+      padding: 4px 10px; font-size: 11px; font-weight: 700;
+      border: none; cursor: pointer; transition: all 0.2s;
+      background: transparent; color: rgba(255,255,255,0.6);
+      font-family: 'Inter', sans-serif;
+    }
+    .lang-toggle-btn.active {
+      background: var(--accent); color: #0D2166;
+    }
+
+    /* ── XP CARD ── */
+    .xp-card {
+      background: linear-gradient(135deg, var(--primary), #0D2166);
+      border-radius: var(--radius-lg); padding: 16px;
+      margin-bottom: 14px; position: relative; overflow: hidden;
+      box-shadow: 0 6px 20px rgba(21,101,192,0.35);
+    }
+    .xp-card::before {
+      content:''; position:absolute; top:-30px; right:-30px;
+      width:120px; height:120px; border-radius:50%;
+      background:rgba(255,255,255,0.05);
+    }
+    .xp-card::after {
+      content:''; position:absolute; bottom:-20px; left:-20px;
+      width:90px; height:90px; border-radius:50%;
+      background:rgba(255,255,255,0.04);
+    }
+    .xp-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .xp-greeting { font-size:12px; color:rgba(255,255,255,0.6); margin-bottom:3px; }
+    .xp-level { font-size:16px; font-weight:800; color:white; }
+    .xp-points { font-size:18px; font-weight:800; color:var(--accent); }
+    .xp-pts-label { font-size:10px; font-weight:600; color:rgba(255,255,255,0.5); }
+    .xp-bar-wrap { background:rgba(255,255,255,0.15); border-radius:99px; height:7px; overflow:hidden; margin-bottom:12px; }
+    .xp-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent),#FBBF24); border-radius:99px; transition:width 1s ease; }
+    .xp-stats { display:grid; grid-template-columns:repeat(4,1fr); }
+    .xp-stat { text-align:center; }
+    .xp-stat:not(:last-child) { border-right:1px solid rgba(255,255,255,0.15); }
+    .xp-stat-val { font-size:15px; font-weight:800; color:var(--accent); }
+    .xp-stat-label { font-size:9px; color:rgba(255,255,255,0.55); }
+
+    /* ── SECTION CARD BASE ── */
+    .daily-card {
+      background: var(--card); border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm); margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .daily-card-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 14px 12px;
+    }
+    .daily-card-icon {
+      width: 34px; height: 34px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .daily-card-title {
+      font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.6px;
+    }
+    .daily-card-sub { font-size: 10px; color: var(--text-secondary); }
+    .daily-card-badge {
+      margin-left: auto; border-radius: 20px;
+      padding: 3px 10px; font-size: 10px; font-weight: 700;
+      cursor: pointer; border: none; font-family: 'Inter', sans-serif;
+    }
+
+    /* ── QOTD ── */
+    .qotd-card { border-color: rgba(245,158,11,0.35); box-shadow: 0 4px 16px rgba(245,158,11,0.1); }
+    .quiz-options-grid { display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:0 14px 14px; }
+    .quiz-opt-btn {
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 10px; padding: 8px 10px;
+      font-size: 12px; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 7px;
+      cursor: pointer; transition: all 0.2s;
+      text-align: left; font-family: 'Inter', sans-serif;
+    }
+    .quiz-opt-btn:hover { border-color: var(--primary); }
+    .quiz-opt-btn.correct { background:#DCFCE7; border-color:var(--success); color:var(--success); font-weight:700; }
+    .quiz-opt-btn.wrong   { background:#FEE2E2; border-color:var(--danger);  color:var(--danger); }
+    .quiz-opt-btn.revealed { pointer-events:none; }
+    .opt-circle {
+      width:20px; height:20px; border-radius:50%;
+      background:var(--border); display:flex; align-items:center;
+      justify-content:center; font-size:10px; font-weight:800;
+      flex-shrink:0; color:var(--text-secondary);
+    }
+    .quiz-question-text { padding:0 14px 12px; font-size:13px; font-weight:700; color:var(--text-primary); line-height:1.5; }
+
+    /* ── MOTIVATION ── */
+    .motivation-card {
+      background: linear-gradient(135deg,#4C1D95,#6D28D9);
+      border-radius: var(--radius-lg); padding: 16px;
+      margin-bottom: 12px; position: relative; overflow: hidden;
+      box-shadow: 0 6px 20px rgba(109,40,217,0.28);
+    }
+    .motivation-card::before {
+      content:'"'; position:absolute; top:-10px; left:8px;
+      font-size:80px; color:rgba(255,255,255,0.07);
+      font-family:Georgia,serif; line-height:1; pointer-events:none;
+    }
+    .motivation-card::after {
+      content:'"'; position:absolute; bottom:-28px; right:8px;
+      font-size:80px; color:rgba(255,255,255,0.07);
+      font-family:Georgia,serif; line-height:1; pointer-events:none;
+    }
+    .motivation-inner { display:flex; gap:10px; align-items:flex-start; position:relative; }
+    .motivation-icon-wrap {
+      width:32px; height:32px; border-radius:10px;
+      background:rgba(255,255,255,0.15);
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; flex-shrink:0;
+    }
+    .motivation-label { font-size:10px; font-weight:700; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:6px; }
+    .motivation-quote { font-size:13px; font-weight:600; color:white; line-height:1.6; font-style:italic; margin-bottom:8px; }
+    .motivation-author { font-size:11px; color:rgba(255,255,255,0.65); font-weight:600; }
+
+    /* ── CURRENT AFFAIRS ── */
+    .ca-list { padding: 0 14px 14px; display:flex; flex-direction:column; gap:0; }
+    .ca-item {
+      display:flex; gap:10px; align-items:flex-start;
+      padding: 9px 0; border-bottom:1px solid var(--border);
+    }
+    .ca-item:last-child { border-bottom:none; padding-bottom:0; }
+    .ca-cat-pill { border-radius:20px; padding:3px 9px; font-size:10px; font-weight:700; flex-shrink:0; margin-top:2px; white-space:nowrap; }
+    .ca-title { font-size:12px; color:var(--text-primary); line-height:1.45; flex:1; }
+
+    /* ── HISTORY ── */
+    .hist-list { padding:0 14px 14px; display:flex; flex-direction:column; gap:0; }
+    .hist-item { display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px solid var(--border); }
+    .hist-item:last-child { border-bottom:none; padding-bottom:0; }
+    .hist-year { background:linear-gradient(135deg,var(--accent),var(--warning)); color:white; font-size:10px; font-weight:800; padding:4px 7px; border-radius:8px; flex-shrink:0; min-width:40px; text-align:center; }
+    .hist-text { font-size:12px; color:var(--text-primary); line-height:1.45; flex:1; }
+    .hist-tag { font-size:9px; font-weight:700; background:var(--accent-light,#FEF3C7); color:var(--warning); padding:2px 6px; border-radius:20px; flex-shrink:0; }
+
+    /* ── DAILY QUIZ SECTION ── */
+    .dquiz-card { border-color:rgba(22,163,74,0.3); box-shadow:0 4px 16px rgba(22,163,74,0.08); }
+    .dquiz-meta { font-size:10px; color:var(--text-secondary); margin-bottom:3px; }
+
+    /* ── LEADERBOARD ── */
+    .leaderboard-card {
+      background:linear-gradient(135deg,#0D2166,#1E293B);
+      border-radius:var(--radius-md); padding:13px 14px;
+      margin-bottom:12px; display:flex; align-items:center;
+      gap:12px; cursor:pointer; border:1px solid #334155;
+    }
+    .leaderboard-text { flex:1; }
+    .leaderboard-title { font-size:13px; font-weight:800; color:white; margin-bottom:2px; }
+    .leaderboard-sub { font-size:11px; color:#94A3B8; }
+
+    .chevron-right { flex-shrink:0; }
+
+    /* ── LOADING SKELETONS ── */
+    .home-skeleton { animation: pulse 1.5s infinite; background:#E2E8F0; border-radius:var(--radius-lg); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  </style>
 </head>
 <body>
 
   <!-- HEADER -->
   <header class="header">
-    <div class="header-logo">Nishchay <span>Academy</span></div>
-    <div class="header-actions">
-      <div id="authBtn"></div>
+    <div class="home-header-inner">
+      <div class="home-header-left">
+        <div class="header-logo-mark">🎓</div>
+        <div>
+          <div class="header-logo">Nishchay <span>Academy</span></div>
+          <p id="headerDate" style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:1px;"></p>
+        </div>
+      </div>
+      <div class="header-meta">
+        <div class="lang-toggle-wrap">
+          <button class="lang-toggle-btn active" id="langBtnEn" onclick="setLang('en')">EN</button>
+          <button class="lang-toggle-btn" id="langBtnGu" onclick="setLang('gu')">ગુ</button>
+        </div>
+        <div class="streak-badge" id="streakBadge">🔥 —</div>
+        <div id="authBtn"></div>
+      </div>
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
-  <main class="page-container">
+  <!-- MAIN -->
+  <main class="page-container" style="padding-top:14px;">
 
-    <!-- Welcome Banner -->
-    <div id="welcomeBanner" style="
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      border-radius: var(--radius-lg);
-      padding: 20px;
-      color: white;
-      margin-bottom: 24px;
-      margin-top: 8px;
-    ">
-      <p style="font-size:13px; opacity:0.85; margin-bottom:4px;">Welcome to</p>
-      <h1 style="font-size:22px; font-weight:700; margin-bottom:6px;">Nishchay Academy 🎯</h1>
-      <p style="font-size:13px; opacity:0.85;">Gujarat Government Exam Preparation Platform</p>
+    <!-- 1. XP PROGRESS CARD -->
+    <div class="xp-card" id="xpCard">
+      <div class="xp-top">
+        <div>
+          <p class="xp-greeting" id="xpGreeting">Good Morning 👋</p>
+          <p class="xp-level">Level 1 — Beginner ⚡</p>
+        </div>
+        <div style="text-align:right;">
+          <span class="xp-points" id="xpPoints">0</span>
+          <span class="xp-pts-label"> XP</span>
+        </div>
+      </div>
+      <div class="xp-bar-wrap">
+        <div class="xp-bar-fill" id="xpBar" style="width:0%;"></div>
+      </div>
+      <div class="xp-stats">
+        <div class="xp-stat"><div class="xp-stat-val" id="statSolved">—</div><div class="xp-stat-label">Solved</div></div>
+        <div class="xp-stat"><div class="xp-stat-val" id="statAccuracy">—</div><div class="xp-stat-label">Accuracy</div></div>
+        <div class="xp-stat"><div class="xp-stat-val" id="statStreak">—</div><div class="xp-stat-label">Streak 🔥</div></div>
+        <div class="xp-stat"><div class="xp-stat-val" id="statRank">—</div><div class="xp-stat-label">Rank</div></div>
+      </div>
     </div>
 
-    <!-- Exam Bodies Section -->
+    <!-- 2. QOTD -->
+    <div class="daily-card qotd-card" id="qotdSection">
+      <div class="daily-card-header">
+        <div class="daily-card-icon" style="background:linear-gradient(135deg,var(--accent),var(--warning));">⭐</div>
+        <div>
+          <div class="daily-card-title" style="color:var(--warning);">Question of the Day</div>
+          <div class="daily-card-sub" id="qotdSubLabel">General Knowledge · Today</div>
+        </div>
+        <div class="daily-card-badge" id="qotdBadge" style="background:var(--accent-light,#FEF3C7);color:var(--warning);" onclick="revealQOTD()">Answer</div>
+      </div>
+      <p class="quiz-question-text" id="qotdQuestion">Loading…</p>
+      <div class="quiz-options-grid" id="qotdOptions"></div>
+      <div id="qotdExplain" style="display:none;background:var(--primary-light);border-radius:var(--radius-sm);margin:0 14px 14px;padding:10px 12px;">
+        <p style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">💡 Explanation</p>
+        <p style="font-size:12px;color:var(--text-secondary);" id="qotdExplainText"></p>
+      </div>
+    </div>
+
+    <!-- 3. CURRENT AFFAIRS -->
+    <div class="daily-card" id="caSection">
+      <div class="daily-card-header">
+        <div class="daily-card-icon" style="background:linear-gradient(135deg,var(--primary),#0D2166);">📰</div>
+        <div>
+          <div class="daily-card-title" style="color:var(--primary);">Today's Current Affairs</div>
+          <div class="daily-card-sub" id="caSubLabel">Loading…</div>
+        </div>
+        <button class="daily-card-badge" style="background:var(--primary-light);color:var(--primary);border:none;" onclick="window.location.href='daily-updates.html?sec=currentAffairs'">All →</button>
+      </div>
+      <div class="ca-list" id="caList">
+        <div style="padding:8px 0;"><div class="home-skeleton" style="height:14px;width:80%;margin-bottom:6px;"></div><div class="home-skeleton" style="height:11px;width:60%;"></div></div>
+      </div>
+    </div>
+
+    <!-- 4. TODAY IN HISTORY -->
+    <div class="daily-card" id="histSection">
+      <div class="daily-card-header">
+        <div class="daily-card-icon" style="background:linear-gradient(135deg,var(--accent),var(--warning));">🗓️</div>
+        <div>
+          <div class="daily-card-title" style="color:var(--warning);">Today in History</div>
+          <div class="daily-card-sub" id="histSubLabel">On this day</div>
+        </div>
+        <button class="daily-card-badge" style="background:var(--accent-light,#FEF3C7);color:var(--warning);border:none;" onclick="window.location.href='daily-updates.html?sec=history'">More →</button>
+      </div>
+      <div class="hist-list" id="histList">
+        <div style="padding:8px 0;"><div class="home-skeleton" style="height:14px;width:75%;margin-bottom:6px;"></div><div class="home-skeleton" style="height:11px;width:55%;"></div></div>
+      </div>
+    </div>
+
+    <!-- 5. DAILY QUIZ -->
+    <div class="daily-card dquiz-card" id="dquizSection">
+      <div class="daily-card-header">
+        <div class="daily-card-icon" style="background:linear-gradient(135deg,var(--success),#15803d);">🧠</div>
+        <div>
+          <div class="daily-card-title" style="color:var(--success);">Daily Quiz</div>
+          <div class="daily-card-sub" id="dquizSubLabel">Loading…</div>
+        </div>
+        <button class="daily-card-badge" id="dquizStartBtn" style="background:#DCFCE7;color:var(--success);border:none;" onclick="startDailyQuiz()">Start →</button>
+      </div>
+      <!-- preview: first question only, full quiz on dedicated page -->
+      <p class="quiz-question-text" id="dquizPreviewQ" style="color:var(--text-secondary);font-weight:500;font-size:12px;"></p>
+    </div>
+
+    <!-- 6. LEADERBOARD TEASER -->
+    <div class="leaderboard-card" id="leaderboardCard" onclick="window.location.href='leaderboard.html'">
+      <div style="font-size:30px;">🏆</div>
+      <div class="leaderboard-text">
+        <p class="leaderboard-title" id="leaderboardTitle">See the Leaderboard</p>
+        <p class="leaderboard-sub">Compete with students across Gujarat</p>
+      </div>
+      <svg class="chevron-right" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2.5"><polyline points="9,18 15,12 9,6"/></svg>
+    </div>
+
+    <!-- 7. MOTIVATION QUOTE -->
+    <div class="motivation-card" id="motivationSection">
+      <div class="motivation-inner">
+        <div class="motivation-icon-wrap">💬</div>
+        <div>
+          <p class="motivation-label">Daily Motivation</p>
+          <p class="motivation-quote" id="motivationQuote">Loading…</p>
+          <p class="motivation-author" id="motivationAuthor"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. EXAM BODIES -->
     <div class="section-header">
-      <h2 class="section-title">Select Exam Body</h2>
+      <h2 class="section-title">Choose Your Exam</h2>
     </div>
-
-    <!-- Loading Skeletons (shown while data loads) -->
     <div id="skeletonLoader" class="card-list">
       <div class="skeleton skeleton-card"></div>
       <div class="skeleton skeleton-card"></div>
       <div class="skeleton skeleton-card"></div>
     </div>
-
-    <!-- Exam Bodies List (filled by JavaScript) -->
     <div id="examBodiesList" class="card-list" style="display:none;"></div>
-
-    <!-- Empty State (shown if no exam bodies exist) -->
     <div id="emptyState" class="empty-state" style="display:none;">
       <div class="empty-state-icon">📚</div>
       <h3>Coming Soon</h3>
       <p>Exam content is being added. Check back soon!</p>
     </div>
 
-<!-- Footer -->
-    <div style="text-align:center; padding:24px 0 8px; border-top:1px solid var(--border); margin-top:24px;">
-      <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin-bottom:8px;">
-        <a href="about.html" style="font-size:13px; color:var(--primary);">About Us</a>
-        <a href="contact.html" style="font-size:13px; color:var(--primary);">Contact Us</a>
-        <a href="privacy.html" style="font-size:13px; color:var(--primary);">Privacy Policy</a>
+    <!-- FOOTER -->
+    <div style="text-align:center;padding:24px 0 8px;border-top:1px solid var(--border);margin-top:20px;">
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:16px;margin-bottom:8px;">
+        <a href="about.html" style="font-size:13px;color:var(--primary);">About Us</a>
+        <a href="contact.html" style="font-size:13px;color:var(--primary);">Contact Us</a>
+        <a href="privacy.html" style="font-size:13px;color:var(--primary);">Privacy Policy</a>
       </div>
-      <p style="font-size:11px; color:var(--text-secondary);">© 2025 Nishchay Academy. All rights reserved.</p>
+      <p style="font-size:11px;color:var(--text-secondary);">© 2025 Nishchay Academy. All rights reserved.</p>
     </div>
 
   </main>
@@ -78,53 +362,31 @@
   <!-- BOTTOM NAVIGATION -->
   <nav class="bottom-nav">
     <button class="nav-item active" onclick="window.location.href='index.html'">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
-        <polyline points="9,22 9,12 15,12 15,22"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
       Home
     </button>
     <button class="nav-item" onclick="window.location.href='practice.html'">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       Practice
     </button>
-    <button class="nav-item" onclick="window.location.href='test.html'">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14,2 14,8 20,8"/>
-        <line x1="16" y1="13" x2="8" y2="13"/>
-        <line x1="16" y1="17" x2="8" y2="17"/>
-      </svg>
-      Tests
+    <button class="nav-item" onclick="window.location.href='daily-updates.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Daily
     </button>
     <button class="nav-item" onclick="window.location.href='my-results.html'">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6" y1="20" x2="6" y2="14"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
       Results
     </button>
     <button class="nav-item" onclick="window.location.href='profile.html'">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-        <circle cx="12" cy="7" r="4"/>
-      </svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       Profile
     </button>
   </nav>
 
-  <!-- TOAST CONTAINER -->
   <div class="toast-container" id="toastContainer"></div>
-
-  <!-- JAVASCRIPT -->
   <script type="module" src="js/firebase-config.js"></script>
   <script type="module" src="js/auth.js"></script>
   <script type="module" src="js/home.js"></script>
-
 </body>
 </html>
+
