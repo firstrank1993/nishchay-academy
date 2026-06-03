@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/png" href="/assets/icons/favicon.png"/>
+  <meta name="theme-color" content="#1565C0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Today in History — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="window.location.href='dashboard.html'"
+        style="background:rgba(255,255,255,0.15);border:none;color:white;
+               width:34px;height:34px;border-radius:50%;cursor:pointer;
+               font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Today in <span>History</span></div>
+    </div>
+    <span id="adminEmail" style="font-size:12px;opacity:0.8;"></span>
+  </header>
+
+  <main class="page-container">
+    <div style="margin-top:8px;margin-bottom:20px;">
+      <h1 class="page-title">📅 Today in History</h1>
+      <p class="page-subtitle">Add historical events shown on home page by date</p>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">➕ Add Event</h3>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Day *</label>
+          <input id="histDay" type="number" min="1" max="31" placeholder="1-31"
+            style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+                   border-radius:var(--radius-sm);font-size:14px;margin-top:6px;
+                   font-family:Inter,sans-serif;"/>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Month *</label>
+          <select id="histMonth"
+            style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+                   border-radius:var(--radius-sm);font-size:14px;margin-top:6px;
+                   font-family:Inter,sans-serif;background:white;">
+            <option value="">Month</option>
+            <option value="1">January</option><option value="2">February</option>
+            <option value="3">March</option><option value="4">April</option>
+            <option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option>
+            <option value="9">September</option><option value="10">October</option>
+            <option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+      </div>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Year *</label>
+      <input id="histYear" type="number" placeholder="e.g. 1947"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;
+               font-family:Inter,sans-serif;"/>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Event Title *</label>
+      <input id="histTitle" type="text" placeholder="e.g. India gained independence"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;
+               font-family:Inter,sans-serif;"/>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Description *</label>
+      <textarea id="histDesc" rows="3" placeholder="Brief description of the event..."
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;
+               font-family:Inter,sans-serif;resize:vertical;"></textarea>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Image URL (Optional)</label>
+      <input id="histImage" type="url" placeholder="https://..."
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 16px;
+               font-family:Inter,sans-serif;"/>
+      <p style="font-size:11px;color:var(--text-secondary);margin-top:-10px;margin-bottom:16px;">
+        Upload image to Firebase Storage first, then paste the URL here
+      </p>
+
+      <button onclick="addHistoryEvent()" class="btn btn-primary" style="width:100%;">
+        Save Event
+      </button>
+    </div>
+
+    <div class="section-header">
+      <h2 class="section-title">All Events</h2>
+      <span id="eventCount" style="font-size:12px;color:var(--text-secondary);"></span>
+    </div>
+
+    <div id="histLoader">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+    <div id="histList" class="card-list" style="display:none;"></div>
+    <div id="histEmpty" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">📅</div>
+      <h3>No events yet</h3>
+      <p>Add the first historical event above</p>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/history-events.js"></script>
+</body>
+</html>

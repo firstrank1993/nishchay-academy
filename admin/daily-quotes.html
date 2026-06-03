@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/png" href="/assets/icons/favicon.png"/>
+  <meta name="theme-color" content="#1565C0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daily Quotes — Admin</title>
+  <link rel="stylesheet" href="../css/style.css"/>
+</head>
+<body style="padding-bottom:0;">
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button onclick="window.location.href='dashboard.html'"
+        style="background:rgba(255,255,255,0.15);border:none;color:white;
+               width:34px;height:34px;border-radius:50%;cursor:pointer;
+               font-size:18px;display:flex;align-items:center;justify-content:center;">←</button>
+      <div class="header-logo">Daily <span>Quotes</span></div>
+    </div>
+    <span id="adminEmail" style="font-size:12px;opacity:0.8;"></span>
+  </header>
+
+  <main class="page-container">
+    <div style="margin-top:8px;margin-bottom:20px;">
+      <h1 class="page-title">Daily Quotes</h1>
+      <p class="page-subtitle">Add motivational quotes shown on the home page</p>
+    </div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">➕ Add New Quote</h3>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Quote Text *</label>
+      <textarea id="quoteText" rows="3" placeholder="Enter the motivational quote..."
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;
+               font-family:Inter,sans-serif;resize:vertical;"></textarea>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Author Name *</label>
+      <input id="quoteAuthor" type="text" placeholder="e.g. APJ Abdul Kalam"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;
+               font-family:Inter,sans-serif;"/>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">
+        Schedule for Specific Date (Optional)
+      </label>
+      <input id="quoteDate" type="date"
+        style="width:100%;padding:10px 12px;border:1.5px solid var(--border);
+               border-radius:var(--radius-sm);font-size:14px;margin:6px 0 4px;
+               font-family:Inter,sans-serif;"/>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:16px;">
+        Leave empty for automatic daily rotation
+      </p>
+
+      <button onclick="addQuote()" class="btn btn-primary" style="width:100%;">Save Quote</button>
+    </div>
+
+    <div class="section-header">
+      <h2 class="section-title">All Quotes</h2>
+      <span id="quoteCount" style="font-size:12px;color:var(--text-secondary);"></span>
+    </div>
+    <div id="quotesLoader">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+    <div id="quotesList" class="card-list" style="display:none;"></div>
+    <div id="quotesEmpty" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">💬</div>
+      <h3>No Quotes Yet</h3>
+      <p>Add your first motivational quote above</p>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="../js/firebase-config.js"></script>
+  <script type="module" src="../js/admin/daily-quotes.js"></script>
+</body>
+</html>
