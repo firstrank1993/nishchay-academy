@@ -532,6 +532,60 @@ body {
     max-width: 1000px;
   }
 }
+/* ============================================
+   NISHCHAY ACADEMY — New Feature Styles
+   ADD THESE TO THE BOTTOM OF css/style.css
+   ============================================ */
+
+/* Daily Hub horizontal scroll strip */
+.daily-hub-card {
+  min-width: 200px;
+  max-width: 220px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  box-shadow: var(--shadow-md);
+  cursor: default;
+}
+
+/* Hide scrollbar on hub strip */
+#dailyHubStrip::-webkit-scrollbar { display: none; }
+
+/* Quiz option buttons hover effect */
+.quiz-option:hover {
+  border-color: var(--primary) !important;
+  background: var(--primary-light) !important;
+}
+
+/* Leaderboard tab base style */
+.tab-btn {
+  padding: 8px 4px;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.tab-active {
+  background: var(--primary) !important;
+  color: white !important;
+  font-weight: 700 !important;
+}
+
+/* Streak badge pulse on high streaks */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
 
 
 @media (min-width: 1200px) {
