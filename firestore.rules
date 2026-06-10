@@ -1,0 +1,147 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── ADMINS ──
+    match /admins/{adminId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── EXAM BODIES ──
+    match /examBodies/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── EXAMS ──
+    match /exams/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── SUBJECTS ──
+    match /subjects/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── TOPICS ──
+    match /topics/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── EXAM SYLLABUS ──
+    match /examSyllabus/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── QUESTIONS ──
+    match /questions/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── STUDY MATERIALS ──
+    match /studyMaterials/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── TESTS ──
+    match /tests/{testId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+      match /sections/{sectionId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+      }
+    }
+
+    // ── TEST ATTEMPTS ── (original rule preserved exactly)
+    match /testAttempts/{attemptId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ── USERS ──
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+
+      // Bookmarks (existing)
+      match /bookmarks/{bookmarkId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      // QOD attempts (new)
+      match /qodAttempts/{qodId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      // Points log (new)
+      match /pointsLog/{logId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow create: if request.auth != null && request.auth.uid == userId;
+        allow update, delete: if false;
+      }
+    }
+
+    // ── FEEDBACK ──
+    match /feedback/{docId} {
+      allow create: if true;
+      allow read: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    // ── SETTINGS ──
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ══ NEW COLLECTIONS ══════════════════════
+
+    // ── DAILY QUOTES ──
+    match /dailyQuotes/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── QUESTION OF THE DAY ──
+    match /questionOfDay/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── TODAY IN HISTORY ──
+    match /historyEvents/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── DAILY QUIZ ──
+    match /dailyQuiz/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // ── DAILY QUIZ ATTEMPTS ──
+    match /dailyQuizAttempts/{docId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update, delete: if false;
+    }
+
+    // ── LEADERBOARD ──
+    match /leaderboard/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+  }
+}
