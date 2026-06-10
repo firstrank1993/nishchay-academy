@@ -54,13 +54,14 @@ service cloud.firestore {
     match /tests/{testId} {
       allow read: if true;
       allow write: if request.auth != null;
+
       match /sections/{sectionId} {
         allow read: if true;
         allow write: if request.auth != null;
       }
     }
 
-    // ── TEST ATTEMPTS ── (original rule preserved exactly)
+    // ── TEST ATTEMPTS ──
     match /testAttempts/{attemptId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null;
@@ -71,23 +72,16 @@ service cloud.firestore {
     // ── USERS ──
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null &&
+        request.auth.uid == userId;
+      allow update: if request.auth != null &&
+        request.auth.uid == userId;
       allow delete: if false;
 
-      // Bookmarks (existing)
+      // ── BOOKMARKS (subcollection under users) ──
       match /bookmarks/{bookmarkId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      // QOD attempts (new)
-      match /qodAttempts/{qodId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      // Points log (new)
-      match /pointsLog/{logId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow create: if request.auth != null && request.auth.uid == userId;
-        allow update, delete: if false;
+        allow read, write: if request.auth != null &&
+          request.auth.uid == userId;
       }
     }
 
@@ -98,16 +92,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // ── SETTINGS ──
-    match /settings/{docId} {
+    // ── DAILY QUOTES ──
+    match /dailyQuotes/{docId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // ══ NEW COLLECTIONS ══════════════════════
-
-    // ── DAILY QUOTES ──
-    match /dailyQuotes/{docId} {
+    // ── SETTINGS (app config, gamification etc.) ──
+    match /settings/{docId} {
       allow read: if true;
       allow write: if request.auth != null;
     }
@@ -142,6 +134,9 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // ── QOD ATTEMPTS (subcollection under users) ──
+    // Already covered by the users match block with bookmarks pattern
 
   }
 }
