@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="manifest" href="/manifest.json"/>
+  <link rel="apple-touch-icon" href="/assets/icons/icon-180.png"/>
+  <link rel="icon" type="image/png" href="/assets/icons/favicon.png"/>
+  <meta name="theme-color" content="#1565C0"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="Nishchay Academy"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nishchay Academy — Gujarat Exam Preparation</title>
+  <meta name="description" content="Prepare for Gujarat Government Exams — GPSC, GPSSB, GSSSB with topic-wise MCQs, PYQs and Mock Tests."/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    .daily-hub-card {
+      min-width: 190px;
+      max-width: 190px;
+      flex-shrink: 0;
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 150px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    #dailyHubStrip::-webkit-scrollbar { display: none; }
+    #dailyHubStrip { scrollbar-width: none; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-logo">Nishchay <span>Academy</span></div>
+    <div class="header-actions">
+      <div id="authBtn"></div>
+    </div>
+  </header>
+
+  <main class="page-container">
+
+    <!-- Welcome Banner -->
+    <div id="welcomeBanner" style="
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      color: white;
+      margin-bottom: 16px;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    ">
+      <div style="position:absolute;top:-20px;right:-20px;width:110px;height:110px;
+                  border-radius:50%;background:rgba(255,255,255,0.06);"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div>
+          <p style="font-size:13px;opacity:0.85;margin-bottom:4px;">Welcome to</p>
+          <h1 style="font-size:22px;font-weight:700;margin-bottom:6px;">Nishchay Academy 🎯</h1>
+          <p style="font-size:13px;opacity:0.85;">Gujarat Government Exam Preparation Platform</p>
+        </div>
+        <!-- Streak Badge shown after login -->
+        <div id="streakBadge" style="display:none;flex-shrink:0;text-align:center;
+          background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.3);
+          border-radius:12px;padding:10px 12px;">
+          <div style="font-size:22px;line-height:1;">🔥</div>
+          <div id="streakCount" style="font-size:20px;font-weight:800;line-height:1.2;">0</div>
+          <div style="font-size:10px;opacity:0.8;font-weight:600;">day streak</div>
+        </div>
+      </div>
+      <!-- Points row shown after login -->
+      <div id="pointsRow" style="display:none;margin-top:12px;padding-top:12px;
+        border-top:1px solid rgba(255,255,255,0.2);display:none;
+        flex-wrap:wrap;gap:16px;align-items:center;">
+        <div>
+          <span id="totalPointsEl" style="font-size:18px;font-weight:800;">0</span>
+          <span style="font-size:12px;opacity:0.75;"> total pts</span>
+        </div>
+        <div>
+          <span id="weeklyPointsEl" style="font-size:18px;font-weight:800;">0</span>
+          <span style="font-size:12px;opacity:0.75;"> this week</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TODAY'S HUB STRIP ── -->
+    <div style="margin-bottom:20px;">
+      <div class="section-header" style="margin-bottom:10px;">
+        <h2 class="section-title">Today's Hub</h2>
+        <span style="font-size:11px;color:var(--text-secondary);">Swipe →</span>
+      </div>
+      <div id="dailyHubStrip" style="display:flex;gap:12px;overflow-x:auto;padding-bottom:6px;">
+
+        <!-- Quote Card -->
+        <div class="daily-hub-card" style="background:linear-gradient(135deg,#1565C0,#0D47A1);color:white;">
+          <div style="font-size:11px;font-weight:700;opacity:0.8;letter-spacing:1px;
+                      text-transform:uppercase;margin-bottom:10px;">✨ Quote of the Day</div>
+          <p id="hubQuoteText" style="font-size:13px;font-style:italic;line-height:1.5;
+                                      flex:1;opacity:0.9;">Loading...</p>
+          <p id="hubQuoteAuthor" style="font-size:11px;opacity:0.65;margin-top:8px;"></p>
+        </div>
+
+        <!-- QOD Card -->
+        <div id="hubQodCard" class="daily-hub-card"
+          style="background:linear-gradient(135deg,#7C3AED,#6d28d9);color:white;cursor:pointer;"
+          onclick="document.getElementById('qodSection').scrollIntoView({behavior:'smooth'})">
+          <div style="font-size:11px;font-weight:700;opacity:0.8;letter-spacing:1px;
+                      text-transform:uppercase;margin-bottom:10px;">🧠 Question of Day</div>
+          <p id="hubQodText" style="font-size:13px;line-height:1.5;flex:1;opacity:0.9;">Loading...</p>
+          <div id="hubQodStatus" style="font-size:11px;margin-top:8px;
+                                        background:rgba(255,255,255,0.2);
+                                        padding:4px 8px;border-radius:99px;
+                                        display:inline-block;"></div>
+        </div>
+
+        <!-- Daily Quiz Card -->
+        <div id="hubQuizCard" class="daily-hub-card"
+          style="background:linear-gradient(135deg,#16A34A,#15803d);color:white;cursor:pointer;"
+          onclick="document.getElementById('quizSection').scrollIntoView({behavior:'smooth'})">
+          <div style="font-size:11px;font-weight:700;opacity:0.8;letter-spacing:1px;
+                      text-transform:uppercase;margin-bottom:10px;">📝 Daily Quiz</div>
+          <p id="hubQuizText" style="font-size:13px;line-height:1.5;flex:1;opacity:0.9;">Loading...</p>
+          <div id="hubQuizStatus" style="font-size:11px;margin-top:8px;
+                                          background:rgba(255,255,255,0.2);
+                                          padding:4px 8px;border-radius:99px;
+                                          display:inline-block;"></div>
+        </div>
+
+        <!-- History Card -->
+        <div id="hubHistoryCard" class="daily-hub-card"
+          style="background:linear-gradient(135deg,#D97706,#b45309);color:white;cursor:pointer;"
+          onclick="document.getElementById('historySection').scrollIntoView({behavior:'smooth'})">
+          <div style="font-size:11px;font-weight:700;opacity:0.8;letter-spacing:1px;
+                      text-transform:uppercase;margin-bottom:10px;">📅 Today in History</div>
+          <p id="hubHistoryText" style="font-size:13px;line-height:1.5;flex:1;opacity:0.9;">Loading...</p>
+          <div id="hubHistoryYear" style="font-size:11px;margin-top:8px;
+                                           background:rgba(255,255,255,0.2);
+                                           padding:4px 8px;border-radius:99px;
+                                           display:inline-block;"></div>
+        </div>
+
+        <!-- Leaderboard Card -->
+        <div class="daily-hub-card"
+          style="background:linear-gradient(135deg,#0891B2,#0e7490);color:white;cursor:pointer;"
+          onclick="window.location.href='leaderboard.html'">
+          <div style="font-size:11px;font-weight:700;opacity:0.8;letter-spacing:1px;
+                      text-transform:uppercase;margin-bottom:10px;">🏆 Leaderboard</div>
+          <div id="hubLeaderPreview" style="flex:1;font-size:12px;line-height:1.9;opacity:0.9;">
+            Loading...
+          </div>
+          <div style="font-size:11px;margin-top:8px;background:rgba(255,255,255,0.2);
+                      padding:4px 8px;border-radius:99px;display:inline-block;">
+            View all rankings →
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── QUESTION OF THE DAY SECTION ── -->
+    <div id="qodSection" style="display:none;margin-bottom:20px;">
+      <div class="section-header" style="margin-bottom:10px;">
+        <h2 class="section-title">🧠 Question of the Day</h2>
+      </div>
+      <div class="card">
+        <p id="qodQuestion" style="font-size:15px;font-weight:600;
+                                   line-height:1.6;margin-bottom:16px;"></p>
+        <div id="qodOptions" style="display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="qodResult" style="display:none;margin-top:14px;padding:12px;
+                                   border-radius:10px;"></div>
+        <div id="qodExplanation" style="display:none;margin-top:10px;padding:14px;
+             background:#EFF6FF;border-radius:10px;border-left:3px solid var(--primary);">
+          <p style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:6px;">
+            📖 Explanation
+          </p>
+          <p id="qodExplanationText" style="font-size:13px;line-height:1.6;
+                                            color:var(--text-primary);"></p>
+        </div>
+        <button id="qodShareBtn" onclick="shareQOD()" style="display:none;
+          width:100%;margin-top:12px;padding:10px;border-radius:10px;
+          border:1.5px solid var(--border);background:white;
+          font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">
+          📤 Share Result
+        </button>
+      </div>
+    </div>
+
+    <!-- ── DAILY QUIZ SECTION ── -->
+    <div id="quizSection" style="display:none;margin-bottom:20px;">
+      <div class="section-header" style="margin-bottom:10px;">
+        <h2 class="section-title">📝 Daily Quiz</h2>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;
+                    gap:10px;margin-bottom:12px;">
+          <div style="flex:1;">
+            <p id="quizTitle" style="font-size:15px;font-weight:700;margin-bottom:4px;"></p>
+            <p id="quizMeta" style="font-size:12px;color:var(--text-secondary);"></p>
+          </div>
+          <span id="quizBadge" style="font-size:11px;font-weight:700;padding:4px 10px;
+            border-radius:99px;background:#dcfce7;color:#15803d;white-space:nowrap;
+            flex-shrink:0;"></span>
+        </div>
+        <div style="display:flex;gap:0;margin-bottom:14px;background:var(--bg);
+                    border-radius:10px;overflow:hidden;">
+          <div style="flex:1;text-align:center;padding:10px 6px;
+                      border-right:1px solid var(--border);">
+            <div id="quizParticipants" style="font-size:18px;font-weight:800;
+                 color:var(--primary);">-</div>
+            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">
+              Participants</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:10px 6px;
+                      border-right:1px solid var(--border);">
+            <div id="quizAvgScore" style="font-size:18px;font-weight:800;
+                 color:var(--success);">-</div>
+            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">
+              Avg Score</div>
+          </div>
+          <div style="flex:1;text-align:center;padding:10px 6px;">
+            <div id="quizDifficulty" style="font-size:18px;font-weight:800;
+                 color:#D97706;">-</div>
+            <div style="font-size:10px;color:var(--text-secondary);margin-top:2px;">
+              Difficulty</div>
+          </div>
+        </div>
+        <button id="quizAttemptBtn" onclick="startDailyQuiz()"
+          class="btn btn-primary" style="width:100%;">Start Quiz</button>
+      </div>
+    </div>
+
+    <!-- ── TODAY IN HISTORY SECTION ── -->
+    <div id="historySection" style="display:none;margin-bottom:20px;">
+      <div class="section-header" style="margin-bottom:10px;">
+        <h2 class="section-title">📅 Today in History</h2>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <img id="historyImage" src="" alt=""
+          style="display:none;width:100%;height:170px;object-fit:cover;"/>
+        <div style="padding:16px;">
+          <span id="historyYear" style="font-size:11px;font-weight:700;
+            padding:3px 10px;border-radius:99px;background:#fef3c7;color:#d97706;
+            display:inline-block;margin-bottom:10px;"></span>
+          <p id="historyTitle" style="font-size:16px;font-weight:700;
+                                      margin-bottom:8px;"></p>
+          <p id="historyDesc" style="font-size:13px;color:var(--text-secondary);
+                                     line-height:1.6;margin-bottom:14px;"></p>
+          <button onclick="shareHistory()" style="width:100%;padding:10px;
+            border-radius:10px;border:1.5px solid var(--border);background:white;
+            font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;">
+            📤 Share This Event
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── EXAM BODIES SECTION ── -->
+    <div class="section-header">
+      <h2 class="section-title">Select Exam Body</h2>
+    </div>
+
+    <div id="skeletonLoader" class="card-list">
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+      <div class="skeleton skeleton-card"></div>
+    </div>
+
+    <div id="examBodiesList" class="card-list" style="display:none;"></div>
+
+    <div id="emptyState" class="empty-state" style="display:none;">
+      <div class="empty-state-icon">📚</div>
+      <h3>Coming Soon</h3>
+      <p>Exam content is being added. Check back soon!</p>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:24px 0 8px;
+                border-top:1px solid var(--border);margin-top:24px;">
+      <div style="display:flex;flex-wrap:wrap;justify-content:center;
+                  gap:16px;margin-bottom:8px;">
+        <a href="about.html" style="font-size:13px;color:var(--primary);">About Us</a>
+        <a href="contact.html" style="font-size:13px;color:var(--primary);">Contact Us</a>
+        <a href="privacy.html" style="font-size:13px;color:var(--primary);">Privacy Policy</a>
+      </div>
+      <p style="font-size:11px;color:var(--text-secondary);">
+        © 2025 Nishchay Academy. All rights reserved.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV — original preserved exactly -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="window.location.href='index.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9,22 9,12 15,12 15,22"/>
+      </svg>
+      Home
+    </button>
+    <button class="nav-item" onclick="window.location.href='practice.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      Practice
+    </button>
+    <button class="nav-item" onclick="window.location.href='test.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+      </svg>
+      Tests
+    </button>
+    <button class="nav-item" onclick="window.location.href='my-results.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="20" x2="18" y2="10"/>
+        <line x1="12" y1="20" x2="12" y2="4"/>
+        <line x1="6" y1="20" x2="6" y2="14"/>
+      </svg>
+      Results
+    </button>
+    <button class="nav-item" onclick="window.location.href='profile.html'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+        <circle cx="12" cy="7" r="4"/>
+      </svg>
+      Profile
+    </button>
+  </nav>
+
+  <!-- DAILY QUIZ MODAL -->
+  <div id="quizModal" style="display:none;position:fixed;inset:0;z-index:300;
+    background:rgba(0,0,0,0.6);overflow-y:auto;">
+    <div style="background:white;min-height:100%;padding:20px 16px;
+                max-width:480px;margin:0 auto;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <button onclick="closeQuizModal()"
+          style="background:#f1f5f9;border:none;width:36px;height:36px;
+                 border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0;">✕</button>
+        <h2 id="quizModalTitle" style="font-size:17px;font-weight:700;"></h2>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+        <span id="quizProgressText" style="font-size:13px;color:var(--text-secondary);
+                                           white-space:nowrap;"></span>
+        <div style="flex:1;height:6px;background:#f1f5f9;border-radius:99px;overflow:hidden;">
+          <div id="quizProgressBar" style="height:100%;background:var(--primary);
+               border-radius:99px;transition:width 0.3s;width:0%;"></div>
+        </div>
+      </div>
+      <p id="quizModalQuestion" style="font-size:16px;font-weight:700;
+                                       line-height:1.6;margin-bottom:16px;"></p>
+      <div id="quizModalOptions" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <button id="quizNextBtn" onclick="nextQuizQuestion()"
+        class="btn btn-primary" style="width:100%;margin-top:16px;display:none;">
+        Next →
+      </button>
+      <!-- Result Screen -->
+      <div id="quizResultScreen" style="display:none;text-align:center;padding:24px 0;">
+        <div style="font-size:60px;margin-bottom:16px;">🎉</div>
+        <h2 style="font-size:22px;font-weight:800;margin-bottom:8px;">Quiz Complete!</h2>
+        <p id="quizResultScore" style="font-size:40px;font-weight:800;
+           color:var(--primary);margin-bottom:6px;"></p>
+        <p id="quizResultAccuracy" style="font-size:14px;color:var(--text-secondary);
+           margin-bottom:24px;"></p>
+        <button onclick="shareQuizResult()"
+          style="width:100%;padding:12px;border-radius:10px;
+                 border:1.5px solid var(--border);background:white;
+                 font-size:14px;font-weight:600;cursor:pointer;
+                 font-family:Inter,sans-serif;margin-bottom:10px;">
+          📤 Share Score
+        </button>
+        <button onclick="closeQuizModal()" class="btn btn-primary" style="width:100%;">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script type="module" src="js/firebase-config.js"></script>
+  <script type="module" src="js/auth.js"></script>
+  <script type="module" src="js/home.js"></script>
+</body>
+</html>
