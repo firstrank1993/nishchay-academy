@@ -1,5 +1,6 @@
 // ============================================
-// NISHCHAY ACADEMY — Home Page (All Features)
+// NISHCHAY ACADEMY — Home Page v2
+// Field names: questionText, options[], correctOption (0-based)
 // ============================================
 
 import { auth, db } from './firebase-config.js';
@@ -13,14 +14,12 @@ import {
 // ── GLOBALS ──
 let currentUser   = null;
 let currentQOD    = null;
-let currentQODQ   = null;
 let currentQuiz   = null;
 let quizQuestions = [];
 let quizIndex     = 0;
 let quizAnswers   = [];
 let quizScore     = 0;
 
-// ── HELPERS ──
 function todayStr() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -32,7 +31,6 @@ function dayOfYear() {
 
 // ── INIT ──
 document.addEventListener('DOMContentLoaded', () => {
-  // These load for everyone, no login needed
   loadDailyQuote();
   loadTodayInHistory();
   loadLeaderboardPreview();
@@ -52,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================
-// EXAM BODIES — original logic preserved exactly
+// EXAM BODIES — unchanged
 // ============================================================
 async function loadExamBodies() {
   const skeletonLoader = document.getElementById('skeletonLoader');
@@ -68,9 +66,7 @@ async function loadExamBodies() {
     let html = '';
     bodies.forEach(data => {
       if (data.isActive === false) return;
-      const initials = data.name.length <= 5
-        ? data.name.toUpperCase()
-        : data.name.substring(0,4).toUpperCase();
+      const initials = data.name.length <= 5 ? data.name.toUpperCase() : data.name.substring(0,4).toUpperCase();
       html += `
         <div class="exam-body-card card-clickable"
           onclick="window.location.href='exam.html?bodyId=${data.id}&bodyName=${encodeURIComponent(data.name)}'">
@@ -91,7 +87,6 @@ async function loadExamBodies() {
   } catch (e) {
     document.getElementById('skeletonLoader').style.display = 'none';
     document.getElementById('emptyState').style.display = 'block';
-    console.error('Exam bodies error:', e);
   }
 }
 
@@ -100,8 +95,8 @@ async function loadExamBodies() {
 // ============================================================
 async function updateStreakAndPoints(user) {
   try {
-    const userRef  = doc(db, 'users', user.uid);
-    const snap     = await getDoc(userRef);
+    const userRef = doc(db, 'users', user.uid);
+    const snap    = await getDoc(userRef);
     if (!snap.exists()) return;
     const data     = snap.data();
     const today    = todayStr();
@@ -119,11 +114,11 @@ async function updateStreakAndPoints(user) {
     let monthly = data.monthlyPoints  || 0;
     let updates = {};
 
-    if ((data.weekKey  || '') !== weekKey)  { updates.weeklyPoints  = 0; updates.weekKey  = weekKey;  weekly  = 0; }
-    if ((data.monthKey || '') !== monthKey) { updates.monthlyPoints = 0; updates.monthKey = monthKey; monthly = 0; }
+    if ((data.weekKey||'') !== weekKey)   { updates.weeklyPoints=0;  updates.weekKey=weekKey;   weekly=0;  }
+    if ((data.monthKey||'') !== monthKey) { updates.monthlyPoints=0; updates.monthKey=monthKey; monthly=0; }
 
     if (lastDay === today) {
-      // already counted today
+      // already counted
     } else if (lastDay === yesterday) {
       streak++;
       updates.currentStreak = streak;
@@ -133,44 +128,37 @@ async function updateStreakAndPoints(user) {
       updates.currentStreak = 1;
       updates.lastActiveDate = today;
     }
-    if (streak > longest) { updates.longestStreak = streak; longest = streak; }
+    if (streak > longest) { updates.longestStreak = streak; }
 
-    // Award login points once per day
     if (lastDay !== today) {
-      const pts = 5;
-      updates.totalPoints   = increment(pts);
-      updates.weeklyPoints  = increment(pts);
-      updates.monthlyPoints = increment(pts);
-      total  += pts; weekly += pts; monthly += pts;
-      await addDoc(collection(db, 'users', user.uid, 'pointsLog'), {
-        type:'login', points:pts, date:today, createdAt:serverTimestamp()
+      updates.totalPoints   = increment(5);
+      updates.weeklyPoints  = increment(5);
+      updates.monthlyPoints = increment(5);
+      total += 5; weekly += 5; monthly += 5;
+      await addDoc(collection(db,'users',user.uid,'pointsLog'), {
+        type:'login', points:5, date:today, createdAt:serverTimestamp()
       });
     }
 
     if (Object.keys(updates).length) await updateDoc(userRef, updates);
 
-    // Update leaderboard cache
-    await setDoc(doc(db, 'leaderboard', user.uid), {
-      userId:        user.uid,
-      fullName:      data.fullName  || 'Student',
-      district:      data.district  || '',
-      photoUrl:      data.photoUrl  || '',
-      totalPoints:   total,
-      weeklyPoints:  weekly,
-      monthlyPoints: monthly,
-      currentStreak: streak,
-      updatedAt:     serverTimestamp()
-    }, { merge: true });
+    await setDoc(doc(db,'leaderboard',user.uid), {
+      userId:user.uid, fullName:data.fullName||'Student',
+      district:data.district||'', photoUrl:data.photoUrl||'',
+      totalPoints:total, weeklyPoints:weekly, monthlyPoints:monthly,
+      currentStreak:streak, updatedAt:serverTimestamp()
+    }, { merge:true });
 
-    // Show streak badge
     if (streak > 0) {
       document.getElementById('streakBadge').style.display = 'block';
       document.getElementById('streakCount').textContent   = streak;
     }
     const pr = document.getElementById('pointsRow');
-    pr.style.display = 'flex';
-    document.getElementById('totalPointsEl').textContent  = total;
-    document.getElementById('weeklyPointsEl').textContent = weekly;
+    if (pr) { pr.style.display='flex'; }
+    const tpEl = document.getElementById('totalPointsEl');
+    const wpEl = document.getElementById('weeklyPointsEl');
+    if (tpEl) tpEl.textContent = total;
+    if (wpEl) wpEl.textContent = weekly;
   } catch(e) { console.error('Streak error:', e); }
 }
 
@@ -182,86 +170,124 @@ async function loadDailyQuote() {
   const authEl = document.getElementById('hubQuoteAuthor');
   try {
     const today = todayStr();
-    // Check scheduled quote first
     const scheduled = await getDocs(query(
-      collection(db, 'dailyQuotes'),
-      where('scheduledDate','==', today),
-      where('isActive','==', true),
+      collection(db,'dailyQuotes'),
+      where('scheduledDate','==',today),
+      where('isActive','==',true),
       limit(1)
     ));
     let quote = null;
     if (!scheduled.empty) {
       quote = scheduled.docs[0].data();
     } else {
-      // Rotation fallback
-      const all = await getDocs(query(
-        collection(db, 'dailyQuotes'),
-        where('isActive','==', true)
-      ));
+      const all = await getDocs(query(collection(db,'dailyQuotes'), where('isActive','==',true)));
       if (!all.empty) {
         const list = [];
         all.forEach(d => { if (!d.data().scheduledDate) list.push(d.data()); });
         if (list.length) {
-          list.sort((a,b) => (a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
+          list.sort((a,b)=>(a.createdAt?.seconds||0)-(b.createdAt?.seconds||0));
           quote = list[dayOfYear() % list.length];
         }
       }
     }
-    if (!quote) { textEl.textContent = 'No quote added yet'; return; }
-    textEl.textContent = '\u201C' + quote.text + '\u201D';
-    authEl.textContent = '\u2014 ' + quote.author;
+    if (!quote) { if(textEl) textEl.textContent='No quote added yet'; return; }
+    if(textEl) textEl.textContent = '\u201C'+quote.text+'\u201D';
+    if(authEl) authEl.textContent = '\u2014 '+quote.author;
   } catch(e) {
-    textEl.textContent = 'Quote unavailable';
-    console.error('Quote error:', e);
+    if(textEl) textEl.textContent = 'Quote unavailable';
+    console.error('Quote error:',e);
   }
 }
 
 // ============================================================
 // QUESTION OF THE DAY
+// FIXED: uses questionText, options[], correctOption (0-based)
 // ============================================================
 async function loadQOD(user) {
   const section = document.getElementById('qodSection');
   try {
+    // First check if admin set a specific question for today
     const today = todayStr();
-    const snap  = await getDocs(query(
-      collection(db, 'questionOfDay'),
-      where('activeDate','==', today),
-      where('isActive','==', true),
+    const qodSnap = await getDocs(query(
+      collection(db,'questionOfDay'),
+      where('activeDate','==',today),
+      where('isActive','==',true),
       limit(1)
     ));
-    if (snap.empty) {
-      document.getElementById('hubQodText').textContent   = 'No question today';
-      document.getElementById('hubQodStatus').textContent = '';
+
+    let qodDocId = null;
+    let qodData  = null;
+    let questionId = null;
+
+    if (!qodSnap.empty) {
+      // Admin-set question for today
+      qodDocId  = qodSnap.docs[0].id;
+      qodData   = qodSnap.docs[0].data();
+      questionId = qodData.questionId;
+    } else {
+      // Auto-rotate: pick from all questions by day of year
+      // Check if there's an auto-rotate setting
+      const autoSnap = await getDocs(query(
+        collection(db,'questionOfDay'),
+        where('activeDate','==','auto'),
+        where('isActive','==',true),
+        limit(1)
+      ));
+      if (!autoSnap.empty) {
+        qodDocId = autoSnap.docs[0].id;
+        qodData  = autoSnap.docs[0].data();
+        // Rotate through all questions
+        const allQ = await getDocs(collection(db,'questions'));
+        const ids  = [];
+        allQ.forEach(d => ids.push(d.id));
+        if (ids.length) questionId = ids[dayOfYear() % ids.length];
+      }
+    }
+
+    if (!questionId) {
+      const hubText = document.getElementById('hubQodText');
+      if(hubText) hubText.textContent = 'No question set for today';
       return;
     }
-    const qodDoc = snap.docs[0];
-    const qod    = { id: qodDoc.id, ...qodDoc.data() };
-    currentQOD   = qod;
 
-    const qSnap  = await getDoc(doc(db, 'questions', qod.questionId));
+    const qSnap = await getDoc(doc(db,'questions',questionId));
     if (!qSnap.exists()) return;
-    const q = { id: qSnap.id, ...qSnap.data() };
-    currentQODQ = q;
+    const q = { id:qSnap.id, ...qSnap.data() };
 
-    // Hub preview
-    document.getElementById('hubQodText').textContent =
-      q.question?.substring(0,70) + (q.question?.length > 70 ? '...' : '');
+    // Hub preview — FIXED field name
+    const hubText   = document.getElementById('hubQodText');
+    const hubStatus = document.getElementById('hubQodStatus');
+    if(hubText) hubText.textContent = (q.questionText||'').substring(0,70) + ((q.questionText||'').length>70?'...':'');
 
-    // Check if already attempted
     let attempted = false;
-    if (user) {
-      const attSnap = await getDoc(doc(db,'users',user.uid,'qodAttempts',qod.id));
+    if (user && qodDocId) {
+      const attSnap = await getDoc(doc(db,'users',user.uid,'qodAttempts',qodDocId));
       attempted = attSnap.exists();
     }
-    document.getElementById('hubQodStatus').textContent =
-      attempted ? '✅ Done' : '👆 Tap to attempt';
+    if(hubStatus) hubStatus.textContent = attempted ? '✅ Done' : '👆 Tap to attempt';
 
-    // Render full section
-    section.style.display = 'block';
-    document.getElementById('qodQuestion').textContent = q.question;
-    const opts = [q.option1, q.option2, q.option3, q.option4].filter(Boolean);
+    // Render full QOD section
+    if(section) section.style.display = 'block';
+    const qEl = document.getElementById('qodQuestion');
+    if(qEl) qEl.textContent = q.questionText || '';
+
+    // Subject/Topic tag
+    const tagEl = document.getElementById('qodTag');
+    if (tagEl && q.subjectId) {
+      try {
+        const subSnap = await getDoc(doc(db,'subjects',q.subjectId));
+        if (subSnap.exists()) {
+          tagEl.textContent = '📚 ' + subSnap.data().name;
+          tagEl.style.display = 'inline-block';
+        }
+      } catch(e) {}
+    }
+
+    // Options — FIXED: uses options[] array, correctOption is 0-based
     const optDiv = document.getElementById('qodOptions');
+    if(!optDiv) return;
     optDiv.innerHTML = '';
+    const opts = q.options || [];
     opts.forEach((opt, i) => {
       const btn = document.createElement('button');
       btn.textContent = String.fromCharCode(65+i) + '. ' + opt;
@@ -270,175 +296,180 @@ async function loadQOD(user) {
         border:1.5px solid #e2e8f0;background:white;
         font-size:13px;font-weight:500;text-align:left;
         cursor:pointer;font-family:Inter,sans-serif;color:#1e293b;
-        transition:border-color 0.2s;
+        transition:all 0.2s;
       `;
       if (attempted) {
-        btn.disabled = true; btn.style.opacity = '0.6';
+        btn.disabled = true; btn.style.opacity = '0.65';
       } else {
-        btn.onclick = () => submitQOD(i, q.correctOption-1, qod, opts, user);
+        btn.onclick = () => submitQOD(i, q.correctOption, qodDocId, qodData, q, opts, user);
       }
       optDiv.appendChild(btn);
     });
 
     if (attempted) {
       const res = document.getElementById('qodResult');
-      res.style.display = 'block';
-      res.style.background = '#f0fdf4';
-      res.innerHTML = '<p style="color:#15803d;font-weight:600;">✅ Already attempted today!</p>';
-      if (qod.explanation) {
-        document.getElementById('qodExplanation').style.display = 'block';
-        document.getElementById('qodExplanationText').textContent = qod.explanation;
+      if(res) {
+        res.style.display = 'block';
+        res.style.background = '#f0fdf4';
+        res.innerHTML = '<p style="color:#15803d;font-weight:600;">✅ Already attempted today!</p>';
+      }
+      if (qodData?.explanation) {
+        const expDiv = document.getElementById('qodExplanation');
+        const expTxt = document.getElementById('qodExplanationText');
+        if(expDiv) expDiv.style.display = 'block';
+        if(expTxt) expTxt.textContent = qodData.explanation;
       }
     }
   } catch(e) {
-    console.error('QOD error:', e);
-    document.getElementById('hubQodText').textContent = 'Unavailable';
+    console.error('QOD error:',e);
+    const hubText = document.getElementById('hubQodText');
+    if(hubText) hubText.textContent = 'Unavailable';
   }
 }
 
-async function submitQOD(selected, correct, qod, opts, user) {
+async function submitQOD(selected, correct, qodDocId, qodData, q, opts, user) {
   const isCorrect = selected === correct;
   const btns = document.getElementById('qodOptions').querySelectorAll('button');
   btns.forEach((b,i) => {
     b.disabled = true;
-    if (i === correct) {
-      b.style.background = '#dcfce7'; b.style.borderColor = '#16a34a';
-      b.style.fontWeight = '700';
-    } else if (i === selected && !isCorrect) {
-      b.style.background = '#fee2e2'; b.style.borderColor = '#dc2626';
-    }
+    if (i===correct)               { b.style.background='#dcfce7'; b.style.borderColor='#16a34a'; b.style.fontWeight='700'; }
+    else if (i===selected&&!isCorrect) { b.style.background='#fee2e2'; b.style.borderColor='#dc2626'; }
   });
   const res = document.getElementById('qodResult');
-  res.style.display = 'block';
-  res.style.background = isCorrect ? '#f0fdf4' : '#fef2f2';
-  res.innerHTML = isCorrect
-    ? '<p style="color:#15803d;font-weight:700;font-size:14px;">🎉 Correct! Well done!</p>'
-    : `<p style="color:#dc2626;font-weight:700;font-size:14px;">❌ Wrong. Correct: ${String.fromCharCode(65+correct)}. ${opts[correct]}</p>`;
-
-  if (qod.explanation) {
-    document.getElementById('qodExplanation').style.display = 'block';
-    document.getElementById('qodExplanationText').textContent = qod.explanation;
+  if(res) {
+    res.style.display = 'block';
+    res.style.background = isCorrect ? '#f0fdf4' : '#fef2f2';
+    res.innerHTML = isCorrect
+      ? '<p style="color:#15803d;font-weight:700;font-size:14px;">🎉 Correct! Well done!</p>'
+      : `<p style="color:#dc2626;font-weight:700;font-size:14px;">❌ Wrong. Correct: ${String.fromCharCode(65+correct)}. ${opts[correct]}</p>`;
   }
-  document.getElementById('qodShareBtn').style.display = 'block';
-  document.getElementById('hubQodStatus').textContent  = '✅ Done';
+  if (qodData?.explanation) {
+    const expDiv = document.getElementById('qodExplanation');
+    const expTxt = document.getElementById('qodExplanationText');
+    if(expDiv) expDiv.style.display = 'block';
+    if(expTxt) expTxt.textContent = qodData.explanation;
+  }
+  const shareBtn = document.getElementById('qodShareBtn');
+  if(shareBtn) shareBtn.style.display = 'block';
+  const hubStatus = document.getElementById('hubQodStatus');
+  if(hubStatus) hubStatus.textContent = '✅ Done';
 
-  if (!user) return;
+  if (!user || !qodDocId) return;
   try {
-    await setDoc(doc(db,'users',user.uid,'qodAttempts',qod.id), {
-      qodId:qod.id, selectedOption:selected, isCorrect, attemptedAt:serverTimestamp()
+    await setDoc(doc(db,'users',user.uid,'qodAttempts',qodDocId), {
+      qodId:qodDocId, selectedOption:selected, isCorrect, attemptedAt:serverTimestamp()
     });
-    await runTransaction(db, async tx => {
-      const ref  = doc(db,'questionOfDay',qod.id);
-      const snap = await tx.get(ref);
-      const d    = snap.data();
-      tx.update(ref, {
-        totalAttempts: (d.totalAttempts||0)+1,
-        correctCount:  (d.correctCount||0)+(isCorrect?1:0)
+    if (qodDocId !== 'auto') {
+      await runTransaction(db, async tx => {
+        const ref  = doc(db,'questionOfDay',qodDocId);
+        const snap = await tx.get(ref);
+        if(snap.exists()) {
+          const d = snap.data();
+          tx.update(ref, { totalAttempts:(d.totalAttempts||0)+1, correctCount:(d.correctCount||0)+(isCorrect?1:0) });
+        }
       });
-    });
-    if (isCorrect) {
-      const pts = 10;
-      await updateDoc(doc(db,'users',user.uid), {
-        totalPoints:increment(pts), weeklyPoints:increment(pts), monthlyPoints:increment(pts)
-      });
-      await addDoc(collection(db,'users',user.uid,'pointsLog'), {
-        type:'qod', points:pts, date:todayStr(), createdAt:serverTimestamp()
-      });
-      showToast('+10 points for correct answer! 🎉', 'success');
     }
-  } catch(e) { console.error('QOD save error:', e); }
+    if (isCorrect) {
+      await updateDoc(doc(db,'users',user.uid), { totalPoints:increment(10), weeklyPoints:increment(10), monthlyPoints:increment(10) });
+      await addDoc(collection(db,'users',user.uid,'pointsLog'), { type:'qod', points:10, date:todayStr(), createdAt:serverTimestamp() });
+      showToast('+10 points! 🎉','success');
+    }
+  } catch(e) { console.error('QOD save error:',e); }
 }
 
 window.shareQOD = function() {
-  const text = `I attempted today's Question of the Day on Nishchay Academy! 🧠\n${window.location.origin}`;
-  if (navigator.share) { navigator.share({ title:'Nishchay Academy QOD', text }); }
-  else { navigator.clipboard?.writeText(text); showToast('Copied!', 'success'); }
+  const qText = document.getElementById('qodQuestion')?.textContent || '';
+  const text  = `🧠 Question of the Day — Nishchay Academy\n\n${qText}\n\nAttempt at: ${window.location.href}`;
+  if (navigator.share) { navigator.share({ title:'QOD — Nishchay Academy', text, url:window.location.href }); }
+  else { navigator.clipboard?.writeText(text); showToast('Copied to clipboard!','success'); }
 };
 
 // ============================================================
 // DAILY QUIZ
+// FIXED: uses questionText, options[], correctOption (0-based)
 // ============================================================
 async function loadDailyQuiz(user) {
   const section = document.getElementById('quizSection');
   try {
     const today = todayStr();
-    const snap  = await getDocs(query(
-      collection(db, 'dailyQuiz'),
-      where('isActive','==', true),
-      limit(10)
-    ));
+    const snap  = await getDocs(query(collection(db,'dailyQuiz'), where('isActive','==',true), limit(10)));
     if (snap.empty) {
-      document.getElementById('hubQuizText').textContent   = 'No quiz today';
-      document.getElementById('hubQuizStatus').textContent = '';
+      const hubText = document.getElementById('hubQuizText');
+      if(hubText) hubText.textContent = 'No quiz today';
       return;
     }
     let quiz = null;
     snap.forEach(d => {
       const data = d.data();
-      if (!quiz && data.startDate <= today && data.endDate >= today) {
-        quiz = { id: d.id, ...data };
-      }
+      if (!quiz && data.startDate <= today && data.endDate >= today) quiz = { id:d.id,...data };
     });
     if (!quiz) {
-      document.getElementById('hubQuizText').textContent   = 'No quiz today';
-      document.getElementById('hubQuizStatus').textContent = '';
+      const hubText = document.getElementById('hubQuizText');
+      if(hubText) hubText.textContent = 'No quiz today';
       return;
     }
     currentQuiz = quiz;
 
     let attempted = false;
     if (user) {
-      const attSnap = await getDocs(query(
-        collection(db,'dailyQuizAttempts'),
-        where('userId','==',user.uid),
-        where('quizId','==',quiz.id),
-        limit(1)
-      ));
+      const attSnap = await getDocs(query(collection(db,'dailyQuizAttempts'), where('userId','==',user.uid), where('quizId','==',quiz.id), limit(1)));
       attempted = !attSnap.empty;
     }
 
-    document.getElementById('hubQuizText').textContent   = quiz.title?.substring(0,60) || 'Daily Quiz';
-    document.getElementById('hubQuizStatus').textContent = attempted ? '✅ Completed' : `${quiz.questionCount||0} Qs`;
+    const hubText   = document.getElementById('hubQuizText');
+    const hubStatus = document.getElementById('hubQuizStatus');
+    if(hubText)   hubText.textContent   = (quiz.title||'Daily Quiz').substring(0,60);
+    if(hubStatus) hubStatus.textContent = attempted ? '✅ Completed' : `${quiz.questionCount||0} Qs`;
 
-    section.style.display = 'block';
-    document.getElementById('quizTitle').textContent = quiz.title;
-    document.getElementById('quizMeta').textContent  =
-      `${quiz.questionCount} Questions · ${quiz.difficulty || 'Medium'}`;
-    document.getElementById('quizBadge').textContent  = attempted ? '✅ Done' : '🟢 Active';
-    const p = quiz.totalParticipants || 0;
-    document.getElementById('quizParticipants').textContent = p;
-    document.getElementById('quizAvgScore').textContent =
-      p > 0 ? Math.round((quiz.totalScore||0)/p) : '-';
-    document.getElementById('quizDifficulty').textContent =
-      (quiz.difficulty||'Medium')[0].toUpperCase() + (quiz.difficulty||'medium').slice(1);
+    if(section) section.style.display = 'block';
+    const titleEl = document.getElementById('quizTitle');
+    const metaEl  = document.getElementById('quizMeta');
+    const badgeEl = document.getElementById('quizBadge');
+    if(titleEl) titleEl.textContent = quiz.title;
+    if(metaEl)  metaEl.textContent  = `${quiz.questionCount} Questions · ${quiz.difficulty||'Medium'}`;
+    if(badgeEl) badgeEl.textContent = attempted ? '✅ Done' : '🟢 Active';
+
+    const p   = quiz.totalParticipants || 0;
+    const avg = p > 0 ? Math.round((quiz.totalScore||0)/p) : '-';
+    const pEl = document.getElementById('quizParticipants');
+    const aEl = document.getElementById('quizAvgScore');
+    const dEl = document.getElementById('quizDifficulty');
+    if(pEl) pEl.textContent = p;
+    if(aEl) aEl.textContent = avg;
+    if(dEl) dEl.textContent = (quiz.difficulty||'Medium')[0].toUpperCase()+(quiz.difficulty||'medium').slice(1);
 
     if (attempted) {
       const btn = document.getElementById('quizAttemptBtn');
-      btn.textContent = '✅ Already Completed';
-      btn.disabled = true; btn.style.opacity = '0.6';
+      if(btn) { btn.textContent='✅ Already Completed'; btn.disabled=true; btn.style.opacity='0.6'; }
     }
   } catch(e) {
-    console.error('Quiz load error:', e);
-    document.getElementById('hubQuizText').textContent = 'Unavailable';
+    console.error('Quiz load error:',e);
+    const hubText = document.getElementById('hubQuizText');
+    if(hubText) hubText.textContent = 'Unavailable';
   }
 }
 
 window.startDailyQuiz = async function() {
-  if (!currentUser) { showToast('Please login to attempt', 'info'); return; }
-  if (!currentQuiz)  return;
-  const ids = (currentQuiz.questionIds || []).slice(0,20);
-  if (!ids.length)  { showToast('Quiz has no questions', 'info'); return; }
+  if (!currentUser) { showToast('Please login to attempt','info'); return; }
+  if (!currentQuiz) return;
+  const ids = (currentQuiz.questionIds||[]).slice(0,20);
+  if (!ids.length) { showToast('Quiz has no questions','info'); return; }
 
-  quizQuestions = []; quizIndex = 0; quizAnswers = []; quizScore = 0;
+  quizQuestions=[]; quizIndex=0; quizAnswers=[]; quizScore=0;
+
+  // FIXED: fetch questions and use correct field names
   for (const id of ids) {
     const s = await getDoc(doc(db,'questions',id));
-    if (s.exists()) quizQuestions.push({ id:s.id, ...s.data() });
+    if (s.exists()) quizQuestions.push({ id:s.id,...s.data() });
   }
-  if (!quizQuestions.length) { showToast('Could not load questions', 'error'); return; }
+  if (!quizQuestions.length) { showToast('Could not load questions','error'); return; }
 
-  document.getElementById('quizModalTitle').textContent    = currentQuiz.title;
-  document.getElementById('quizResultScreen').style.display = 'none';
-  document.getElementById('quizModal').style.display        = 'block';
+  const modalTitle = document.getElementById('quizModalTitle');
+  const resultScr  = document.getElementById('quizResultScreen');
+  const modal      = document.getElementById('quizModal');
+  if(modalTitle) modalTitle.textContent = currentQuiz.title;
+  if(resultScr)  resultScr.style.display = 'none';
+  if(modal)      modal.style.display = 'block';
   document.body.style.overflow = 'hidden';
   renderQuizQuestion();
 };
@@ -446,25 +477,32 @@ window.startDailyQuiz = async function() {
 function renderQuizQuestion() {
   const q   = quizQuestions[quizIndex];
   const tot = quizQuestions.length;
-  document.getElementById('quizProgressText').textContent  =
-    `Question ${quizIndex+1} of ${tot}`;
-  document.getElementById('quizProgressBar').style.width   =
-    `${(quizIndex/tot)*100}%`;
-  document.getElementById('quizModalQuestion').textContent = q.question;
-  document.getElementById('quizNextBtn').style.display     = 'none';
-  const opts = [q.option1,q.option2,q.option3,q.option4].filter(Boolean);
+  const ptEl = document.getElementById('quizProgressText');
+  const pbEl = document.getElementById('quizProgressBar');
+  const qEl  = document.getElementById('quizModalQuestion');
+  const nbEl = document.getElementById('quizNextBtn');
+  if(ptEl) ptEl.textContent = `Question ${quizIndex+1} of ${tot}`;
+  if(pbEl) pbEl.style.width = `${(quizIndex/tot)*100}%`;
+  // FIXED: use questionText not question
+  if(qEl)  qEl.textContent = q.questionText || '';
+  if(nbEl) nbEl.style.display = 'none';
+
+  // FIXED: use options[] array
+  const opts = q.options || [];
   const el   = document.getElementById('quizModalOptions');
+  if(!el) return;
   el.innerHTML = '';
   opts.forEach((opt,i) => {
     const btn = document.createElement('button');
-    btn.textContent = String.fromCharCode(65+i) + '. ' + opt;
+    btn.textContent = String.fromCharCode(65+i)+'. '+opt;
     btn.style.cssText = `
       width:100%;padding:12px 14px;border-radius:10px;
       border:1.5px solid #e2e8f0;background:white;
       font-size:14px;font-weight:500;text-align:left;
       cursor:pointer;font-family:Inter,sans-serif;color:#1e293b;
     `;
-    btn.onclick = () => pickQuizAnswer(i, q.correctOption-1, el.querySelectorAll('button'));
+    // FIXED: correctOption is already 0-based
+    btn.onclick = () => pickQuizAnswer(i, q.correctOption, el.querySelectorAll('button'));
     el.appendChild(btn);
   });
 }
@@ -475,12 +513,11 @@ function pickQuizAnswer(sel, correct, btns) {
   quizAnswers.push({ questionId:quizQuestions[quizIndex].id, sel, correct, ok });
   btns.forEach((b,i) => {
     b.disabled = true;
-    if (i===correct) { b.style.background='#dcfce7'; b.style.borderColor='#16a34a'; }
-    else if (i===sel && !ok) { b.style.background='#fee2e2'; b.style.borderColor='#dc2626'; }
+    if (i===correct)       { b.style.background='#dcfce7'; b.style.borderColor='#16a34a'; }
+    else if (i===sel&&!ok) { b.style.background='#fee2e2'; b.style.borderColor='#dc2626'; }
   });
-  const nextBtn = document.getElementById('quizNextBtn');
-  nextBtn.style.display    = 'block';
-  nextBtn.textContent = quizIndex < quizQuestions.length-1 ? 'Next →' : 'Finish Quiz';
+  const nb = document.getElementById('quizNextBtn');
+  if(nb) { nb.style.display='block'; nb.textContent = quizIndex<quizQuestions.length-1?'Next →':'Finish Quiz'; }
 }
 
 window.nextQuizQuestion = function() {
@@ -492,53 +529,58 @@ window.nextQuizQuestion = function() {
 async function finishQuiz() {
   const tot = quizQuestions.length;
   const acc = Math.round((quizScore/tot)*100);
-  document.getElementById('quizModalOptions').innerHTML    = '';
-  document.getElementById('quizModalQuestion').textContent = '';
-  document.getElementById('quizProgressText').textContent  = 'Complete!';
-  document.getElementById('quizProgressBar').style.width   = '100%';
-  document.getElementById('quizNextBtn').style.display     = 'none';
-  document.getElementById('quizResultScreen').style.display = 'block';
-  document.getElementById('quizResultScore').textContent    = `${quizScore} / ${tot}`;
-  document.getElementById('quizResultAccuracy').textContent =
-    `Accuracy: ${acc}% · ${acc>=70 ? 'Great job! 🌟' : 'Keep practising! 💪'}`;
+  const el1 = document.getElementById('quizModalOptions');
+  const el2 = document.getElementById('quizModalQuestion');
+  const el3 = document.getElementById('quizProgressText');
+  const el4 = document.getElementById('quizProgressBar');
+  const el5 = document.getElementById('quizNextBtn');
+  const el6 = document.getElementById('quizResultScreen');
+  const el7 = document.getElementById('quizResultScore');
+  const el8 = document.getElementById('quizResultAccuracy');
+  if(el1) el1.innerHTML='';
+  if(el2) el2.textContent='';
+  if(el3) el3.textContent='Complete!';
+  if(el4) el4.style.width='100%';
+  if(el5) el5.style.display='none';
+  if(el6) el6.style.display='block';
+  if(el7) el7.textContent=`${quizScore} / ${tot}`;
+  if(el8) el8.textContent=`Accuracy: ${acc}% · ${acc>=70?'Great job! 🌟':'Keep practising! 💪'}`;
 
   if (currentUser && currentQuiz) {
     try {
       const answers = {};
-      quizAnswers.forEach(a => { answers[a.questionId] = a.sel; });
+      quizAnswers.forEach(a => { answers[a.questionId]=a.sel; });
       await addDoc(collection(db,'dailyQuizAttempts'), {
         userId:currentUser.uid, quizId:currentQuiz.id,
         score:quizScore, totalQ:tot, accuracy:acc,
         answers, attemptedAt:serverTimestamp()
       });
-      await updateDoc(doc(db,'dailyQuiz',currentQuiz.id), {
-        totalParticipants: increment(1),
-        totalScore:        increment(quizScore)
-      });
-      const pts = 20;
-      await updateDoc(doc(db,'users',currentUser.uid), {
-        totalPoints:increment(pts), weeklyPoints:increment(pts), monthlyPoints:increment(pts)
-      });
-      await addDoc(collection(db,'users',currentUser.uid,'pointsLog'), {
-        type:'quiz', points:pts, date:todayStr(), createdAt:serverTimestamp()
-      });
-      document.getElementById('quizAttemptBtn').textContent = '✅ Already Completed';
-      document.getElementById('quizAttemptBtn').disabled    = true;
-      document.getElementById('quizBadge').textContent      = '✅ Done';
-      document.getElementById('hubQuizStatus').textContent  = '✅ Completed';
-      showToast('+20 points for completing quiz! 🎉', 'success');
-    } catch(e) { console.error('Quiz save error:', e); }
+      await updateDoc(doc(db,'dailyQuiz',currentQuiz.id), { totalParticipants:increment(1), totalScore:increment(quizScore) });
+      await updateDoc(doc(db,'users',currentUser.uid), { totalPoints:increment(20), weeklyPoints:increment(20), monthlyPoints:increment(20) });
+      await addDoc(collection(db,'users',currentUser.uid,'pointsLog'), { type:'quiz', points:20, date:todayStr(), createdAt:serverTimestamp() });
+      const btn = document.getElementById('quizAttemptBtn');
+      const badge = document.getElementById('quizBadge');
+      const hubStatus = document.getElementById('hubQuizStatus');
+      if(btn)       { btn.textContent='✅ Already Completed'; btn.disabled=true; btn.style.opacity='0.6'; }
+      if(badge)     badge.textContent='✅ Done';
+      if(hubStatus) hubStatus.textContent='✅ Completed';
+      showToast('+20 points for completing quiz! 🎉','success');
+    } catch(e) { console.error('Quiz save error:',e); }
   }
 }
 
 window.closeQuizModal = function() {
-  document.getElementById('quizModal').style.display = 'none';
-  document.body.style.overflow = '';
+  const modal = document.getElementById('quizModal');
+  if(modal) modal.style.display='none';
+  document.body.style.overflow='';
 };
+
 window.shareQuizResult = function() {
-  const text = `I scored ${quizScore}/${quizQuestions.length} in today's Daily Quiz on Nishchay Academy! 🎯\n${window.location.origin}`;
-  if (navigator.share) { navigator.share({ title:'Daily Quiz Result', text }); }
-  else { navigator.clipboard?.writeText(text); showToast('Copied!', 'success'); }
+  const tot  = quizQuestions.length;
+  const acc  = Math.round((quizScore/tot)*100);
+  const text = `📝 Daily Quiz Result — Nishchay Academy\n\nScore: ${quizScore}/${tot} (${acc}%)\n${acc>=70?'🌟 Great job!':'💪 Keep practising!'}\n\nJoin at: ${window.location.origin}`;
+  if (navigator.share) { navigator.share({ title:'Daily Quiz Result', text, url:window.location.origin }); }
+  else { navigator.clipboard?.writeText(text); showToast('Copied!','success'); }
 };
 
 // ============================================================
@@ -546,45 +588,82 @@ window.shareQuizResult = function() {
 // ============================================================
 async function loadTodayInHistory() {
   const section = document.getElementById('historySection');
+  const container = document.getElementById('historyContainer');
   try {
     const now   = new Date();
     const snap  = await getDocs(query(
       collection(db,'historyEvents'),
-      where('month','==', now.getMonth()+1),
-      where('day','==',   now.getDate()),
-      where('isActive','==', true),
-      limit(1)
+      where('month','==',now.getMonth()+1),
+      where('day','==',now.getDate()),
+      where('isActive','==',true)
     ));
     if (snap.empty) {
-      document.getElementById('hubHistoryText').textContent = 'No event today';
-      document.getElementById('hubHistoryYear').textContent = '';
+      const hubText = document.getElementById('hubHistoryText');
+      if(hubText) hubText.textContent = 'No event today';
       return;
     }
-    const ev = snap.docs[0].data();
-    document.getElementById('hubHistoryText').textContent =
-      ev.title?.substring(0,65) + (ev.title?.length > 65 ? '...' : '');
-    document.getElementById('hubHistoryYear').textContent =
-      ev.year ? `Year ${ev.year}` : '';
 
-    section.style.display = 'block';
-    if (ev.imageUrl) {
-      const img = document.getElementById('historyImage');
-      img.src = ev.imageUrl; img.style.display = 'block';
-    }
-    document.getElementById('historyYear').textContent  = ev.year ? `Year ${ev.year}` : '';
-    document.getElementById('historyTitle').textContent = ev.title;
-    document.getElementById('historyDesc').textContent  = ev.description;
+    const events = [];
+    snap.forEach(d => events.push({ id:d.id,...d.data() }));
+
+    // Hub card shows first event
+    const first = events[0];
+    const hubText = document.getElementById('hubHistoryText');
+    const hubYear = document.getElementById('hubHistoryYear');
+    if(hubText) hubText.textContent = (first.title||'').substring(0,65)+((first.title||'').length>65?'...':'');
+    if(hubYear) hubYear.textContent = first.year ? `Year ${first.year}` : '';
+
+    if(section) section.style.display='block';
+    if(!container) return;
+
+    container.innerHTML = '';
+    events.forEach((ev, idx) => {
+      const card = document.createElement('div');
+      card.style.cssText = `
+        background:white;border-radius:14px;overflow:hidden;
+        border:1px solid var(--border);
+        ${idx > 0 ? 'margin-top:12px;' : ''}
+      `;
+      const subjectTag = ev.subject ? `<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:#f3e8ff;color:#7c3aed;margin-left:6px;">${ev.subject}</span>` : '';
+      card.innerHTML = `
+        ${ev.imageUrl ? `<img src="${ev.imageUrl}" style="width:100%;height:160px;object-fit:cover;"/>` : ''}
+        <div style="padding:14px;">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:#fef3c7;color:#d97706;">
+              📅 Year ${ev.year}
+            </span>
+            ${subjectTag}
+          </div>
+          <p style="font-size:15px;font-weight:700;margin-bottom:6px;">${ev.title}</p>
+          <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;">${ev.description}</p>
+          <button onclick="shareHistoryEvent('${ev.id}')"
+            style="width:100%;padding:10px;border-radius:10px;
+                   border:1.5px solid var(--border);background:white;
+                   font-size:13px;font-weight:600;cursor:pointer;
+                   font-family:Inter,sans-serif;">
+            📤 Share This Event
+          </button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+
+    // Store events for sharing
+    window._historyEvents = events;
   } catch(e) {
-    console.error('History error:', e);
-    document.getElementById('hubHistoryText').textContent = 'Unavailable';
+    console.error('History error:',e);
+    const hubText = document.getElementById('hubHistoryText');
+    if(hubText) hubText.textContent = 'Unavailable';
   }
 }
-window.shareHistory = function() {
-  const t = document.getElementById('historyTitle').textContent;
-  const d = document.getElementById('historyDesc').textContent;
-  const text = `📅 Today in History\n\n${t}\n\n${d}\n\nNishchay Academy: ${window.location.origin}`;
-  if (navigator.share) { navigator.share({ title:'Today in History', text }); }
-  else { navigator.clipboard?.writeText(text); showToast('Copied!', 'success'); }
+
+window.shareHistoryEvent = function(eventId) {
+  const events = window._historyEvents || [];
+  const ev     = events.find(e => e.id === eventId);
+  if (!ev) return;
+  const text = `📅 Today in History — ${ev.year}\n\n${ev.title}\n\n${ev.description}\n\nLearn more at Nishchay Academy: ${window.location.origin}`;
+  if (navigator.share) { navigator.share({ title:'Today in History', text, url:window.location.origin }); }
+  else { navigator.clipboard?.writeText(text); showToast('Copied to clipboard!','success'); }
 };
 
 // ============================================================
@@ -593,28 +672,23 @@ window.shareHistory = function() {
 async function loadLeaderboardPreview() {
   const el = document.getElementById('hubLeaderPreview');
   try {
-    const snap = await getDocs(query(
-      collection(db,'leaderboard'),
-      orderBy('weeklyPoints','desc'),
-      limit(3)
-    ));
-    if (snap.empty) { el.textContent = 'No rankings yet'; return; }
-    const medals = ['🥇','🥈','🥉'];
-    let html = ''; let i = 0;
+    const snap = await getDocs(query(collection(db,'leaderboard'), orderBy('weeklyPoints','desc'), limit(3)));
+    if (snap.empty) { if(el) el.textContent='No rankings yet'; return; }
+    const medals=['🥇','🥈','🥉']; let html=''; let i=0;
     snap.forEach(d => {
-      const data = d.data();
+      const data=d.data();
       html += `<div>${medals[i]} ${(data.fullName||'Student').split(' ')[0]} — ${data.weeklyPoints||0} pts</div>`;
       i++;
     });
-    el.innerHTML = html;
-  } catch(e) { el.textContent = 'See rankings →'; }
+    if(el) el.innerHTML=html;
+  } catch(e) { if(el) el.textContent='See rankings →'; }
 }
 
 // ── TOAST ──
 window.showToast = function(msg, type='info') {
   const c = document.getElementById('toastContainer');
-  if (!c) return;
+  if(!c) return;
   const t = document.createElement('div');
-  t.className = `toast toast-${type}`; t.textContent = msg;
-  c.appendChild(t); setTimeout(() => t.remove(), 3000);
+  t.className=`toast toast-${type}`; t.textContent=msg;
+  c.appendChild(t); setTimeout(()=>t.remove(),3000);
 };

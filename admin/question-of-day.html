@@ -17,25 +17,52 @@
   </header>
   <main class="page-container">
     <div style="margin-top:8px;margin-bottom:20px;">
-      <h1 class="page-title">Question of the Day</h1>
-      <p class="page-subtitle">Pick a question from the bank and set it for a date</p>
+      <h1 class="page-title">🧠 Question of the Day</h1>
+      <p class="page-subtitle">Set daily question or enable auto-rotation</p>
     </div>
+
+    <!-- AUTO ROTATE OPTION -->
+    <div class="card" style="margin-bottom:16px;background:#eff6ff;border-color:#bfdbfe;">
+      <h3 style="font-size:14px;font-weight:700;color:var(--primary);margin-bottom:8px;">🔄 Auto-Rotate Mode</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+        Enable this to automatically show a different random question from your question bank every day — no manual scheduling needed.
+      </p>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span id="autoRotateLabel" style="font-size:13px;font-weight:600;color:var(--text-primary);">Loading...</span>
+        <div id="autoRotateTrack" onclick="toggleAutoRotate()"
+          style="width:52px;height:28px;border-radius:99px;background:#CBD5E1;cursor:pointer;position:relative;flex-shrink:0;transition:background 0.3s;">
+          <div id="autoRotateDot" style="width:22px;height:22px;border-radius:50%;background:white;position:absolute;top:3px;left:3px;transition:left 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.2);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANUAL QOD -->
     <div class="card" style="margin-bottom:24px;">
-      <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">➕ Add QOD Entry</h3>
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">➕ Set Manual QOD for a Specific Date</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">This overrides auto-rotate for that specific day.</p>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Active Date *</label>
       <input id="qodDate" type="date" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:Inter,sans-serif;"/>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Question ID *</label>
       <input id="qodQuestionId" type="text" placeholder="Paste Firestore Question document ID" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 4px;font-family:Inter,sans-serif;"/>
-      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">Firebase Console → Firestore → questions collection → click document → copy the ID from the URL</p>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:14px;">
+        Firebase Console → Firestore → questions collection → click any question → copy the ID from the address bar
+      </p>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Explanation (shown after attempt)</label>
       <textarea id="qodExplanation" rows="3" placeholder="Write explanation for the correct answer..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 16px;font-family:Inter,sans-serif;resize:vertical;"></textarea>
-      <button onclick="addQOD()" class="btn btn-primary" style="width:100%;">Save QOD Entry</button>
+
+      <button onclick="addQOD()" class="btn btn-primary" style="width:100%;">Save QOD for This Date</button>
     </div>
-    <div class="section-header"><h2 class="section-title">All QOD Entries</h2></div>
+
+    <div class="section-header"><h2 class="section-title">Scheduled QOD Entries</h2></div>
     <div id="qodLoader"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
     <div id="qodList" class="card-list" style="display:none;"></div>
     <div id="qodEmpty" class="empty-state" style="display:none;">
-      <div class="empty-state-icon">🧠</div><h3>No QOD entries yet</h3><p>Add the first one above</p>
+      <div class="empty-state-icon">🧠</div>
+      <h3>No scheduled entries</h3>
+      <p>Enable auto-rotate above or add a manual QOD entry</p>
     </div>
   </main>
   <div class="toast-container" id="toastContainer"></div>

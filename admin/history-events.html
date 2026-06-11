@@ -17,38 +17,61 @@
   </header>
   <main class="page-container">
     <div style="margin-top:8px;margin-bottom:20px;">
-      <h1 class="page-title">Today in History</h1>
-      <p class="page-subtitle">Add historical events shown on home page by date</p>
+      <h1 class="page-title">📅 Today in History</h1>
+      <p class="page-subtitle">Events auto-match today's date. Add year + details only.</p>
     </div>
+
+    <!-- BULK UPLOAD -->
+    <div class="card" style="margin-bottom:16px;background:#f0fdf4;border-color:#bbf7d0;">
+      <h3 style="font-size:14px;font-weight:700;color:#15803d;margin-bottom:10px;">📊 Bulk Upload via Excel</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
+        Columns: Day | Month (1-12) | Year | Title | Description | Subject/Topic Tag | Image URL (optional)
+      </p>
+      <div style="display:flex;gap:8px;">
+        <button onclick="downloadHistoryTemplate()" class="btn btn-sm" style="background:white;border:1.5px solid #16a34a;color:#16a34a;flex:1;">⬇ Download Template</button>
+        <label style="flex:1;">
+          <span class="btn btn-sm" style="background:#16a34a;color:white;border:none;display:block;text-align:center;cursor:pointer;">📤 Upload Excel</span>
+          <input type="file" accept=".xlsx,.xls" onchange="bulkUploadHistory(event)" style="display:none;"/>
+        </label>
+      </div>
+      <div id="bulkHistoryStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;font-size:13px;font-weight:600;"></div>
+    </div>
+
+    <!-- ADD FORM -->
     <div class="card" style="margin-bottom:24px;">
-      <h3 style="font-size:15px;font-weight:700;margin-bottom:16px;">➕ Add Event</h3>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;">
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Day (1-31) *</label>
-          <input id="histDay" type="number" min="1" max="31" placeholder="e.g. 15" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-top:6px;font-family:Inter,sans-serif;"/>
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">➕ Add Single Event</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">Day and Month auto-set to today. Just enter the year and details.</p>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px;padding:10px;background:var(--bg);border-radius:8px;">
+        <div style="flex:1;text-align:center;">
+          <div id="autoDay" style="font-size:20px;font-weight:800;color:var(--primary);"></div>
+          <div style="font-size:11px;color:var(--text-secondary);">Day (auto)</div>
         </div>
-        <div>
-          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Month *</label>
-          <select id="histMonth" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin-top:6px;font-family:Inter,sans-serif;background:white;">
-            <option value="">Select</option>
-            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
-            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
-            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
-            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
-          </select>
+        <div style="flex:1;text-align:center;">
+          <div id="autoMonth" style="font-size:20px;font-weight:800;color:var(--primary);"></div>
+          <div style="font-size:11px;color:var(--text-secondary);">Month (auto)</div>
         </div>
       </div>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Year *</label>
       <input id="histYear" type="number" placeholder="e.g. 1947" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:Inter,sans-serif;"/>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Event Title *</label>
       <input id="histTitle" type="text" placeholder="e.g. India gained independence" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:Inter,sans-serif;"/>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Description *</label>
-      <textarea id="histDesc" rows="3" placeholder="Brief description..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:Inter,sans-serif;resize:vertical;"></textarea>
+      <textarea id="histDesc" rows="3" placeholder="Brief description of the event..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:Inter,sans-serif;resize:vertical;"></textarea>
+
+      <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Subject / Topic Tag (Optional)</label>
+      <input id="histSubject" type="text" placeholder="e.g. 📚 History, 🏛️ Polity, 🌍 Geography" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 14px;font-family:Inter,sans-serif;"/>
+
       <label style="font-size:12px;font-weight:600;color:var(--text-secondary);">Image URL (Optional)</label>
       <input id="histImage" type="url" placeholder="https://..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;margin:6px 0 4px;font-family:Inter,sans-serif;"/>
-      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:16px;">Upload to Firebase Storage first, then paste URL here</p>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:16px;">Upload to Firebase Storage first, then paste URL</p>
+
       <button onclick="addHistoryEvent()" class="btn btn-primary" style="width:100%;">Save Event</button>
     </div>
+
     <div class="section-header">
       <h2 class="section-title">All Events</h2>
       <span id="eventCount" style="font-size:12px;color:var(--text-secondary);"></span>
@@ -56,7 +79,7 @@
     <div id="histLoader"><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div></div>
     <div id="histList" class="card-list" style="display:none;"></div>
     <div id="histEmpty" class="empty-state" style="display:none;">
-      <div class="empty-state-icon">📅</div><h3>No events yet</h3><p>Add the first event above</p>
+      <div class="empty-state-icon">📅</div><h3>No events yet</h3><p>Add the first historical event above</p>
     </div>
   </main>
   <div class="toast-container" id="toastContainer"></div>
