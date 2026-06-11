@@ -17,15 +17,6 @@
       ]
     },
     {
-      "collectionGroup": "historyEvents",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "month", "order": "ASCENDING" },
-        { "fieldPath": "day", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "dailyQuiz",
       "queryScope": "COLLECTION",
       "fields": [
@@ -44,4 +35,3 @@
   ],
   "fieldOverrides": []
 }
-
