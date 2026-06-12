@@ -17,14 +17,6 @@
       ]
     },
     {
-      "collectionGroup": "dailyQuiz",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "startDate", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "dailyQuizAttempts",
       "queryScope": "COLLECTION",
       "fields": [
