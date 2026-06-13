@@ -1,6 +1,6 @@
 // ============================================
-// NISHCHAY ACADEMY — Home Page v3
-// Fixed: QOD auto-rotate, quiz blank screen, history multiple events
+// NISHCHAY ACADEMY — Home Page v4
+// Added: respects loginRequired toggle from settings/appConfig
 // ============================================
 
 import { auth, db } from './firebase-config.js';
@@ -12,6 +12,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 let currentUser   = null;
+let loginRequired = true; // default safe value until loaded
 let currentQOD    = null;
 let currentQuiz   = null;
 let quizQuestions = [];
@@ -27,9 +28,7 @@ function dayOfYear() {
   const n = new Date(), s = new Date(n.getFullYear(),0,0);
   return Math.floor((n-s)/86400000);
 }
-// Get question text regardless of field name used
 function getQText(q) { return q.questionText || q.question || ''; }
-// Get options regardless of how they were stored
 function getOpts(q) {
   if (q.options && q.options.length) return q.options;
   const opts = [];
@@ -39,10 +38,9 @@ function getOpts(q) {
   if (q.option4) opts.push(q.option4);
   return opts;
 }
-// Get correct index regardless of how it was stored (0-based vs 1-based)
 function getCorrect(q) {
   const c = q.correctOption;
-  if (typeof c === 'number') return c; // already 0-based
+  if (typeof c === 'number') return c;
   if (typeof c === 'string') {
     const map = {'A':0,'B':1,'C':2,'D':3};
     return map[c.toUpperCase()] ?? 0;
@@ -50,21 +48,33 @@ function getCorrect(q) {
   return 0;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+// ── LOGIN SETTING ──
+async function loadLoginSetting() {
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'appConfig'));
+    loginRequired = snap.exists() ? (snap.data().loginRequired !== false) : true;
+  } catch(e) { loginRequired = true; }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load the login setting FIRST so all features know whether
+  // to require login for interactive actions
+  await loadLoginSetting();
+
   loadDailyQuote();
   loadTodayInHistory();
   loadLeaderboardPreview();
   loadExamBodies();
+
   onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
       updateStreakAndPoints(user);
-      loadQOD(user);
-      loadDailyQuiz(user);
-    } else {
-      loadQOD(null);
-      loadDailyQuiz(null);
     }
+    // Load QOD and Quiz regardless of login state — content is visible to all,
+    // but attempting requires login only if loginRequired is true
+    loadQOD(user);
+    loadDailyQuiz(user);
   });
 });
 
@@ -110,7 +120,7 @@ async function loadExamBodies() {
 }
 
 // ============================================================
-// STREAK & POINTS
+// STREAK & POINTS — only runs for logged-in users (points need a user account)
 // ============================================================
 async function updateStreakAndPoints(user) {
   try {
@@ -134,7 +144,7 @@ async function updateStreakAndPoints(user) {
     if ((data.weekKey||'') !== weekKey)   { updates.weeklyPoints=0;  updates.weekKey=weekKey;   weekly=0;  }
     if ((data.monthKey||'') !== monthKey) { updates.monthlyPoints=0; updates.monthKey=monthKey; monthly=0; }
     if (lastDay === today) {
-      // already logged today
+      // already counted today
     } else if (lastDay === yesterday) {
       streak++; updates.currentStreak=streak; updates.lastActiveDate=today;
     } else {
@@ -165,7 +175,7 @@ async function updateStreakAndPoints(user) {
 }
 
 // ============================================================
-// DAILY QUOTE
+// DAILY QUOTE — always visible to everyone
 // ============================================================
 async function loadDailyQuote() {
   const textEl = document.getElementById('hubQuoteText');
@@ -195,8 +205,8 @@ async function loadDailyQuote() {
 
 // ============================================================
 // QUESTION OF THE DAY
-// FIX: Auto-rotate picks random question from bank without
-//      needing any "auto" document in questionOfDay collection
+// FIX: Question and options always VISIBLE to everyone.
+//      Only the ATTEMPT (submit) requires login if loginRequired is true.
 // ============================================================
 async function loadQOD(user) {
   const section   = document.getElementById('qodSection');
@@ -205,7 +215,6 @@ async function loadQOD(user) {
   try {
     const today = todayStr();
 
-    // Step 1: Check if admin set a specific question for today
     const qodSnap = await getDocs(query(
       collection(db,'questionOfDay'),
       where('activeDate','==',today),
@@ -218,22 +227,17 @@ async function loadQOD(user) {
     let questionId = null;
 
     if (!qodSnap.empty) {
-      // Admin manually set today's question
       qodDocId   = qodSnap.docs[0].id;
       qodData    = qodSnap.docs[0].data();
       questionId = qodData.questionId;
     } else {
-      // Step 2: Auto-rotate — pick from question bank by day of year
-      // No special document needed — just picks from existing questions
       const allQ = await getDocs(query(collection(db,'questions'), limit(200)));
       if (!allQ.empty) {
         const ids = [];
         allQ.forEach(d => ids.push(d.id));
         if (ids.length) {
-          // Sort IDs for consistent daily rotation
           ids.sort();
           questionId = ids[dayOfYear() % ids.length];
-          // Use a synthetic docId for tracking attempts
           qodDocId = `auto_${today}`;
           qodData  = { explanation: null };
         }
@@ -255,10 +259,9 @@ async function loadQOD(user) {
     const opts  = getOpts(q);
     const correct = getCorrect(q);
 
-    // Hub card preview
     if(hubText) hubText.textContent = qText.substring(0,70)+(qText.length>70?'...':'');
 
-    // Check if already attempted today
+    // Check attempt status only if user is logged in
     let attempted = false;
     if (user && qodDocId) {
       try {
@@ -266,14 +269,18 @@ async function loadQOD(user) {
         attempted = attSnap.exists();
       } catch(e) {}
     }
-    if(hubStatus) hubStatus.textContent = attempted ? '✅ Done' : '👆 Tap to attempt';
 
-    // Render full section
+    if(hubStatus) {
+      if (attempted) hubStatus.textContent = '✅ Done';
+      else if (!user && loginRequired) hubStatus.textContent = '🔒 Login to attempt';
+      else hubStatus.textContent = '👆 Tap to attempt';
+    }
+
+    // ALWAYS show the question and options — visible to everyone
     if(section) section.style.display='block';
     const qEl = document.getElementById('qodQuestion');
     if(qEl) qEl.textContent = qText;
 
-    // Subject tag
     const tagEl = document.getElementById('qodTag');
     if (tagEl && q.subjectId) {
       try {
@@ -285,7 +292,6 @@ async function loadQOD(user) {
       } catch(e) {}
     }
 
-    // Render options
     const optDiv = document.getElementById('qodOptions');
     if(!optDiv) return;
     optDiv.innerHTML = '';
@@ -302,7 +308,14 @@ async function loadQOD(user) {
       if (attempted) {
         btn.disabled=true; btn.style.opacity='0.65';
       } else {
-        btn.onclick = () => submitQOD(i, correct, qodDocId, qodData, qText, opts, user);
+        // Allow click for everyone — gate the LOGIN check inside submitQOD
+        btn.onclick = () => {
+          if (loginRequired && !user) {
+            showToast('Please login to submit your answer 🔒', 'info');
+            return;
+          }
+          submitQOD(i, correct, qodDocId, qodData, qText, opts, user);
+        };
       }
       optDiv.appendChild(btn);
     });
@@ -314,6 +327,12 @@ async function loadQOD(user) {
         const expDiv=document.getElementById('qodExplanation'); const expTxt=document.getElementById('qodExplanationText');
         if(expDiv) expDiv.style.display='block'; if(expTxt) expTxt.textContent=qodData.explanation;
       }
+    }
+
+    // Show a login hint banner if anonymous + login required
+    if (!user && loginRequired) {
+      const hint = document.getElementById('qodLoginHint');
+      if (hint) hint.style.display = 'block';
     }
   } catch(e) {
     console.error('QOD error:',e);
@@ -345,12 +364,12 @@ async function submitQOD(selected, correct, qodDocId, qodData, qText, opts, user
   const hubStatus=document.getElementById('hubQodStatus');
   if(hubStatus) hubStatus.textContent='✅ Done';
 
+  // If no user (anonymous access allowed), skip saving attempt/points
   if (!user || !qodDocId) return;
   try {
     await setDoc(doc(db,'users',user.uid,'qodAttempts',qodDocId), {
       qodId:qodDocId, selectedOption:selected, isCorrect, attemptedAt:serverTimestamp()
     });
-    // Only update analytics for manually-set QOD (not auto)
     if (!qodDocId.startsWith('auto_') && qodDocId) {
       await runTransaction(db, async tx => {
         const ref=doc(db,'questionOfDay',qodDocId); const snap=await tx.get(ref);
@@ -374,8 +393,8 @@ window.shareQOD = function() {
 
 // ============================================================
 // DAILY QUIZ
-// FIX: Questions now blank because field names were mismatched
-//      Added getQText/getOpts/getCorrect helpers above
+// FIX: Quiz info ALWAYS visible. Starting the quiz requires
+//      login only if loginRequired is true.
 // ============================================================
 async function loadDailyQuiz(user) {
   const section=document.getElementById('quizSection');
@@ -397,7 +416,11 @@ async function loadDailyQuiz(user) {
     }
 
     if(hubText) hubText.textContent=(quiz.title||'Daily Quiz').substring(0,60);
-    if(hubStatus) hubStatus.textContent=attempted?'✅ Completed':`${quiz.questionCount||0} Qs`;
+    if(hubStatus) {
+      if (attempted) hubStatus.textContent='✅ Completed';
+      else if (!user && loginRequired) hubStatus.textContent='🔒 Login to attempt';
+      else hubStatus.textContent=`${quiz.questionCount||0} Qs`;
+    }
 
     if(section) section.style.display='block';
     const titleEl=document.getElementById('quizTitle'); const metaEl=document.getElementById('quizMeta'); const badgeEl=document.getElementById('quizBadge');
@@ -411,12 +434,21 @@ async function loadDailyQuiz(user) {
     if(pEl) pEl.textContent=p; if(aEl) aEl.textContent=avg;
     if(dEl) dEl.textContent=(quiz.difficulty||'Medium')[0].toUpperCase()+(quiz.difficulty||'medium').slice(1);
 
-    if(attempted) { const btn=document.getElementById('quizAttemptBtn'); if(btn){btn.textContent='✅ Already Completed';btn.disabled=true;btn.style.opacity='0.6';} }
+    const btn = document.getElementById('quizAttemptBtn');
+    if(attempted) {
+      if(btn){btn.textContent='✅ Already Completed';btn.disabled=true;btn.style.opacity='0.6';}
+    } else if (!user && loginRequired) {
+      if(btn){btn.textContent='🔒 Login to Start Quiz';btn.disabled=false;btn.style.opacity='1';}
+    }
   } catch(e) { console.error('Quiz load error:',e); if(hubText) hubText.textContent='Unavailable'; }
 }
 
 window.startDailyQuiz = async function() {
-  if(!currentUser) { showToast('Please login to attempt','info'); return; }
+  // FIX: only block if loginRequired is true AND user is not logged in
+  if (loginRequired && !currentUser) {
+    showToast('Please login to attempt the quiz 🔒', 'info');
+    return;
+  }
   if(!currentQuiz) return;
   const ids=(currentQuiz.questionIds||[]).slice(0,20);
   if(!ids.length) { showToast('Quiz has no questions','info'); return; }
@@ -440,7 +472,6 @@ function renderQuizQuestion() {
   const qEl=document.getElementById('quizModalQuestion'); const nb=document.getElementById('quizNextBtn');
   if(pt) pt.textContent=`Question ${quizIndex+1} of ${tot}`;
   if(pb) pb.style.width=`${(quizIndex/tot)*100}%`;
-  // FIX: use helper functions to get text/options regardless of field names
   if(qEl) qEl.textContent=getQText(q);
   if(nb) nb.style.display='none';
 
@@ -479,6 +510,9 @@ async function finishQuiz() {
   if(el7) el7.textContent=`${quizScore} / ${tot}`;
   if(el8) el8.textContent=`Accuracy: ${acc}% · ${acc>=70?'Great job! 🌟':'Keep practising! 💪'}`;
 
+  // FIX: only save attempt/award points if user is actually logged in.
+  // If loginRequired is OFF and user attempted without logging in,
+  // they still see their result, but it's not saved to leaderboard.
   if(currentUser&&currentQuiz) {
     try {
       const answers={}; quizAnswers.forEach(a=>{answers[a.questionId]=a.sel;});
@@ -491,6 +525,9 @@ async function finishQuiz() {
       if(badge) badge.textContent='✅ Done'; if(hs) hs.textContent='✅ Completed';
       showToast('+20 points for completing quiz! 🎉','success');
     } catch(e){console.error('Quiz save error:',e);}
+  } else if (!currentUser) {
+    // Anonymous attempt — show a gentle prompt to log in for points
+    showToast('Login to save your score and earn points! 💡','info');
   }
 }
 
@@ -498,9 +535,7 @@ window.closeQuizModal=function(){const md=document.getElementById('quizModal');i
 window.shareQuizResult=function(){const tot=quizQuestions.length;const acc=Math.round((quizScore/tot)*100);const text=`📝 Daily Quiz Result — Nishchay Academy\n\nScore: ${quizScore}/${tot} (${acc}%)\n${acc>=70?'🌟 Great job!':'💪 Keep practising!'}\n\nJoin at: ${window.location.origin}`;if(navigator.share){navigator.share({title:'Daily Quiz Result',text,url:window.location.origin});}else{navigator.clipboard?.writeText(text);showToast('Copied!','success');}};
 
 // ============================================================
-// TODAY IN HISTORY
-// FIX: Removed orderBy (needs composite index) — sort client-side
-//      Also fixed: was only showing last event, now shows all
+// TODAY IN HISTORY — always visible to everyone
 // ============================================================
 async function loadTodayInHistory() {
   const section=document.getElementById('historySection');
@@ -509,7 +544,6 @@ async function loadTodayInHistory() {
   const hubYear=document.getElementById('hubHistoryYear');
   try {
     const now=new Date();
-    // FIX: Only filter by month+day, NO orderBy — avoids composite index requirement
     const snap=await getDocs(query(
       collection(db,'historyEvents'),
       where('month','==',now.getMonth()+1),
@@ -518,10 +552,9 @@ async function loadTodayInHistory() {
     ));
     if(snap.empty) { if(hubText) hubText.textContent='No event today'; return; }
 
-    // Get ALL matching events and sort client-side
     const events=[];
     snap.forEach(d=>events.push({id:d.id,...d.data()}));
-    events.sort((a,b)=>(a.year||0)-(b.year||0)); // sort by year ascending
+    events.sort((a,b)=>(a.year||0)-(b.year||0));
 
     const first=events[0];
     if(hubText) hubText.textContent=(first.title||'').substring(0,65)+((first.title||'').length>65?'...':'');
@@ -535,11 +568,13 @@ async function loadTodayInHistory() {
       const card=document.createElement('div');
       card.style.cssText=`background:white;border-radius:14px;overflow:hidden;border:1px solid var(--border);${idx>0?'margin-top:12px;':''}`;
       const subjectTag=ev.subject?`<span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:99px;background:#f3e8ff;color:#7c3aed;margin-left:6px;">${ev.subject}</span>`:'';
+      const MONTHS=['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const fullDate = `${ev.day} ${MONTHS[ev.month]} ${ev.year}`;
       card.innerHTML=`
         ${ev.imageUrl?`<img src="${ev.imageUrl}" style="width:100%;height:160px;object-fit:cover;"/>`:''}
         <div style="padding:14px;">
           <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:8px;">
-            <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:#fef3c7;color:#d97706;">📅 Year ${ev.year}</span>
+            <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:#fef3c7;color:#d97706;">📅 ${fullDate}</span>
             ${subjectTag}
           </div>
           <p style="font-size:15px;font-weight:700;margin-bottom:6px;">${ev.title}</p>
@@ -567,7 +602,7 @@ window.shareHistoryEvent=function(eventId){
 };
 
 // ============================================================
-// LEADERBOARD PREVIEW
+// LEADERBOARD PREVIEW — always visible to everyone
 // ============================================================
 async function loadLeaderboardPreview() {
   const el=document.getElementById('hubLeaderPreview');
